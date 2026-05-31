@@ -1,0 +1,364 @@
+{% load humanize %}
+
+<style>
+/* ── Stats ─────────────────────────────────────────────── */
+.rep-stat-card {
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    padding: 16px;
+    text-align: center;
+    background: #fff;
+    transition: box-shadow 0.15s;
+}
+.rep-stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.rep-stat-val { font-size: 1.4rem; font-weight: 700; line-height: 1; margin-top: 8px; }
+.rep-stat-lbl { font-size: 11px; color: #6b7280; margin-top: 4px; }
+
+/* ── Filtres pills ──────────────────────────────────────── */
+.rep-filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    align-items: center;
+}
+.rep-pill {
+    border: 2px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #fff;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.rep-pill:hover    { border-color: var(--color-accent); color: var(--color-accent); }
+.rep-pill.active   { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+.rep-pill.p-term.active   { background: var(--color-success); border-color: var(--color-success); }
+.rep-pill.p-cours.active  { background: var(--color-warning); border-color: var(--color-warning); }
+.rep-pill.p-attente.active { background: #3b82f6; border-color: #3b82f6; }
+
+/* ── Timeline ───────────────────────────────────────────── */
+.timeline {
+    position: relative;
+    padding-left: 32px;
+}
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: #e5e7eb;
+    border-radius: 2px;
+}
+
+/* Point timeline */
+.tl-point {
+    position: absolute;
+    left: -32px;
+    top: 16px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: #fff;
+    flex-shrink: 0;
+}
+.tl-point.terminee  { background: var(--color-success); box-shadow: 0 0 0 2px var(--color-success); }
+.tl-point.en_cours  { background: var(--color-warning); box-shadow: 0 0 0 2px var(--color-warning); }
+.tl-point.en_attente { background: #3b82f6; box-shadow: 0 0 0 2px #3b82f6; }
+
+/* Card réparation */
+.rep-card {
+    position: relative;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.15s, transform 0.1s;
+}
+.rep-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); transform: translateX(2px); }
+
+.rep-card.terminee   { background: #f0fdf4; border-color: #bbf7d0; }
+.rep-card.en_cours   { background: #fefce8; border-color: #fde68a; }
+.rep-card.en_attente { background: #eff6ff; border-color: #bfdbfe; }
+
+.rep-card-body { padding: 14px 16px; }
+
+/* Ligne principale */
+.rep-main-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.rep-left  { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.rep-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+
+/* Badges ligne du haut */
+.rep-top-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.rep-date { font-weight: 700; font-size: 13px; color: #111827; white-space: nowrap; }
+
+.rep-type-badge {
+    background: rgba(255,255,255,0.7);
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.rep-statut {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 12px; padding: 2px 10px;
+    font-size: 11px; font-weight: 600;
+}
+.rep-statut.terminee   { background: #dcfce7; color: #166534; }
+.rep-statut.en_cours   { background: #fef3c7; color: #92400e; }
+.rep-statut.en_attente { background: #dbeafe; color: #1e40af; }
+
+/* Garage */
+.rep-garage { font-size: 12px; color: #374151; font-weight: 600; }
+.rep-desc   { font-size: 12px; color: #6b7280; }
+
+/* Montant */
+.rep-montant {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--color-accent);
+    white-space: nowrap;
+}
+
+/* Boutons action */
+.rep-actions { display: flex; gap: 4px; }
+.btn-action-sm {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; border: 1px solid #e5e7eb;
+    background: rgba(255,255,255,0.8); color: #6b7280;
+    transition: all 0.15s; text-decoration: none;
+}
+.btn-action-sm:hover           { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.btn-action-sm.view:hover { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.btn-action-sm.edit:hover { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+.btn-action-sm.del:hover  { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+
+/* Total récapitulatif */
+.rep-total-bar {
+    background: #1e3260;
+    border-radius: 10px;
+    padding: 12px 20px;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    font-size: 13px;
+}
+.rep-total-bar .total-val {
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+/* État vide */
+.rep-empty { text-align: center; padding: 48px 20px; color: #9ca3af; }
+.rep-empty i { font-size: 2.5rem; display: block; margin-bottom: 12px; opacity: 0.4; }
+</style>
+
+<!-- ── Statistiques ──────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="rep-stat-card">
+            <i class="bi bi-currency-exchange text-primary" style="font-size:1.8rem;"></i>
+            <div class="rep-stat-val text-primary">{{ vehicule.get_cout_total_reparations|floatformat:0|intcomma }}</div>
+            <div class="rep-stat-lbl">Coût total (FCFA)</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="rep-stat-card">
+            <i class="bi bi-tools" style="font-size:1.8rem;color:var(--color-warning);"></i>
+            <div class="rep-stat-val" style="color:var(--color-warning);">{{ vehicule.get_nombre_reparations }}</div>
+            <div class="rep-stat-lbl">Réparations totales</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="rep-stat-card">
+            <i class="bi bi-calendar-event" style="font-size:1.8rem;color:var(--color-success);"></i>
+            <div class="rep-stat-val" style="color:var(--color-success);font-size:1.1rem;">
+                {% if vehicule.get_derniere_reparation %}
+                    {{ vehicule.get_derniere_reparation.date_reparation|date:"d/m/Y" }}
+                {% else %}
+                    —
+                {% endif %}
+            </div>
+            <div class="rep-stat-lbl">Dernière réparation</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── En-tête + bouton ajouter ─────────────────────────── -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="mb-0 fw-bold" style="color:#1e3260;">
+        <i class="bi bi-clock-history me-2"></i>Historique des réparations
+    </h6>
+    <a href="{% url 'vehicules:reparation_create' %}?vehicule={{ vehicule.pk }}"
+       class="btn btn-sm btn-primary fw-bold">
+        <i class="bi bi-plus-circle me-1"></i>Ajouter
+    </a>
+</div>
+
+{% if vehicule.reparations.all %}
+
+<!-- ── Filtres pills ─────────────────────────────────────── -->
+<div class="rep-filter-bar">
+    <span class="text-muted fw-semibold" style="font-size:12px;">Filtrer :</span>
+    <button class="rep-pill active" data-filter="tous" onclick="filterRep(this,'tous')">
+        Tous <span class="badge bg-secondary rounded-pill ms-1" style="font-size:10px;">{{ vehicule.reparations.count }}</span>
+    </button>
+    <button class="rep-pill p-term" data-filter="terminee" onclick="filterRep(this,'terminee')">
+        <i class="bi bi-check-circle"></i> Terminées
+    </button>
+    <button class="rep-pill p-cours" data-filter="en_cours" onclick="filterRep(this,'en_cours')">
+        <i class="bi bi-hourglass-split"></i> En cours
+    </button>
+    <button class="rep-pill p-attente" data-filter="en_attente" onclick="filterRep(this,'en_attente')">
+        <i class="bi bi-clock"></i> En attente
+    </button>
+</div>
+
+<!-- ── Timeline ──────────────────────────────────────────── -->
+<div class="timeline" id="timelineRep">
+    {% for rep in vehicule.reparations.all %}
+    <div class="rep-card {{ rep.statut }}" data-statut="{{ rep.statut }}" data-montant="{{ rep.montant }}">
+        <!-- Point timeline -->
+        <div class="tl-point {{ rep.statut }}">
+            {% if rep.statut == 'terminee' %}
+                <i class="bi bi-check-lg" style="font-size:9px;"></i>
+            {% elif rep.statut == 'en_cours' %}
+                <i class="bi bi-hourglass-split" style="font-size:9px;"></i>
+            {% else %}
+                <i class="bi bi-clock" style="font-size:9px;"></i>
+            {% endif %}
+        </div>
+
+        <div class="rep-card-body">
+            <div class="rep-main-row">
+                <!-- Gauche : infos -->
+                <div class="rep-left">
+                    <div class="rep-top-row">
+                        <span class="rep-date">
+                            <i class="bi bi-calendar3 me-1 text-muted"></i>{{ rep.date_reparation|date:"d/m/Y" }}
+                        </span>
+                        <span class="rep-type-badge">{{ rep.type_reparation.nom }}</span>
+                        <span class="rep-statut {{ rep.statut }}">
+                            {% if rep.statut == 'terminee' %}
+                                <i class="bi bi-check-circle"></i> Terminée
+                            {% elif rep.statut == 'en_cours' %}
+                                <i class="bi bi-hourglass-split"></i> En cours
+                            {% else %}
+                                <i class="bi bi-clock"></i> En attente
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="rep-garage">
+                        <i class="bi bi-building me-1 text-muted"></i>{{ rep.garage_prestataire }}
+                    </div>
+                    {% if rep.description %}
+                    <div class="rep-desc">{{ rep.description|truncatewords:15 }}</div>
+                    {% endif %}
+                    {% if rep.pieces_remplacees %}
+                    <div class="rep-desc">
+                        <i class="bi bi-gear-fill me-1"></i>{{ rep.pieces_remplacees|truncatewords:10 }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Droite : montant + actions -->
+                <div class="rep-right">
+                    <div class="rep-montant">{{ rep.montant|floatformat:0|intcomma }} FCFA</div>
+                    <div class="rep-actions">
+                        <a href="{% url 'vehicules:reparation_detail' rep.pk %}"
+                           class="btn-action-sm view" title="Voir détails">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{% url 'vehicules:reparation_update' rep.pk %}"
+                           class="btn-action-sm edit" title="Modifier">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'vehicules:reparation_delete' rep.pk %}"
+                           class="btn-action-sm del" title="Supprimer">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ── Total récapitulatif ───────────────────────────────── -->
+<div class="rep-total-bar" id="repTotalBar">
+    <span><i class="bi bi-calculator me-2"></i>Total affiché</span>
+    <span class="total-val" id="repTotalVal">{{ vehicule.get_cout_total_reparations|floatformat:0|intcomma }} FCFA</span>
+</div>
+
+<script>
+(function () {
+    function filterRep(btn, statut) {
+        // Maj boutons actifs
+        document.querySelectorAll('.rep-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Filtrer les cards
+        const cards = document.querySelectorAll('#timelineRep .rep-card');
+        let total = 0;
+        let visible = 0;
+
+        cards.forEach(card => {
+            const match = statut === 'tous' || card.dataset.statut === statut;
+            card.style.display = match ? '' : 'none';
+            if (match) {
+                total += parseFloat(card.dataset.montant) || 0;
+                visible++;
+            }
+        });
+
+        // Maj total
+        document.getElementById('repTotalVal').textContent =
+            Math.round(total).toLocaleString('fr-FR') + ' FCFA';
+
+        // Masquer la ligne timeline si vide
+        const timeline = document.getElementById('timelineRep');
+        timeline.style.display = visible === 0 ? 'none' : '';
+    }
+
+    // Exposer globalement pour les onclick
+    window.filterRep = filterRep;
+})();
+</script>
+
+{% else %}
+<div class="rep-empty">
+    <i class="bi bi-tools"></i>
+    <p class="fw-semibold mb-2">Aucune réparation enregistrée</p>
+    <a href="{% url 'vehicules:reparation_create' %}?vehicule={{ vehicule.pk }}"
+       class="btn btn-sm btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>Ajouter la première réparation
+    </a>
+</div>
+{% endif %}
