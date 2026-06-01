@@ -81,6 +81,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'apps.compagnie.context_processors.compagnie_context',
+                'core.context_processors.active_module',
             ],
         },
     },
@@ -145,7 +146,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Login/Logout URLs
 LOGIN_URL = 'two_factor:login'
-LOGIN_REDIRECT_URL = 'guichet:dashboard'
+LOGIN_REDIRECT_URL = 'hub'
 LOGOUT_REDIRECT_URL = 'two_factor:login'
 TWO_FACTOR_LOGIN_URL = 'two_factor:login'
 

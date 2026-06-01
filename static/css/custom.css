@@ -873,6 +873,20 @@ small, .small {
     font-size: 0.85rem;
 }
 
+/* Bouton "Modules" dans la navbar contextuelle */
+.modules-btn {
+    background: rgba(255,255,255,0.12) !important;
+    border: 1px solid rgba(255,255,255,0.3) !important;
+    border-radius: 6px !important;
+    font-size: 0.82rem !important;
+    padding: 0.3rem 0.65rem !important;
+    transition: background 0.2s !important;
+}
+
+.modules-btn:hover {
+    background: rgba(255,255,255,0.22) !important;
+}
+
 /* Scrollbar personnalisée */
 ::-webkit-scrollbar {
     width: 8px;

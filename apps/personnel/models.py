@@ -1,5 +1,30 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.urls import reverse, NoReverseMatch
+
+
+class Module(models.Model):
+    cle         = models.SlugField(max_length=50, unique=True, verbose_name="Clé")
+    nom         = models.CharField(max_length=100, verbose_name="Nom")
+    description = models.CharField(max_length=200, blank=True, verbose_name="Description")
+    icone       = models.CharField(max_length=100, default='bi-grid', verbose_name="Icône Bootstrap")
+    url_name    = models.CharField(max_length=100, verbose_name="Nom d'URL Django")
+    ordre       = models.PositiveSmallIntegerField(default=0, verbose_name="Ordre d'affichage")
+    actif       = models.BooleanField(default=True, verbose_name="Actif")
+
+    class Meta:
+        ordering = ['ordre']
+        verbose_name = "Module"
+        verbose_name_plural = "Modules"
+
+    def __str__(self):
+        return self.nom
+
+    def get_url(self):
+        try:
+            return reverse(self.url_name)
+        except NoReverseMatch:
+            return '#'
 
 
 class UtilisateurManager(BaseUserManager):
@@ -57,6 +82,12 @@ class Utilisateur(AbstractUser):
     actif = models.BooleanField(default=True, verbose_name="Actif")
     date_creation = models.DateTimeField(auto_now_add=True)
     date_modification = models.DateTimeField(auto_now=True)
+    modules_autorises = models.ManyToManyField(
+        'Module',
+        blank=True,
+        related_name='utilisateurs_autorises',
+        verbose_name="Modules autorisés",
+    )
 
     objects = UtilisateurManager()
 

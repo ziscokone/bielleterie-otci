@@ -16,6 +16,7 @@ urlpatterns = [
     path('utilisateurs/<int:pk>/modifier/', views.UtilisateurUpdateView.as_view(), name='utilisateur_update'),
     path('utilisateurs/<int:pk>/supprimer/', views.UtilisateurDeleteView.as_view(), name='utilisateur_delete'),
     path('utilisateurs/<int:pk>/reset-2fa/', views.Reset2FAView.as_view(), name='reset_2fa'),
+    path('utilisateurs/<int:pk>/modules/', views.ModulesUtilisateurView.as_view(), name='utilisateur_modules'),
 
     # Chauffeurs
     path('chauffeurs/', views.ChauffeurListView.as_view(), name='chauffeur_list'),

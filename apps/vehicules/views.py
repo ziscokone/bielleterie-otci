@@ -20,7 +20,7 @@ from apps.compagnie.models import Compagnie
 
 
 # Vues pour les modèles de véhicules
-class ModeleVehiculeListView(AdminRequiredMixin, ListView):
+class ModeleVehiculeListView(LoginRequiredMixin, ListView):
     """Liste des modèles de véhicules."""
     model = ModeleVehicule
     template_name = 'vehicules/modele_list.html'
@@ -80,7 +80,7 @@ class ModeleVehiculeDeleteView(AdminRequiredMixin, DeleteView):
 
 
 # Vues pour les véhicules
-class VehiculeListView(AdminRequiredMixin, ListView):
+class VehiculeListView(LoginRequiredMixin, ListView):
     """Liste des véhicules."""
     model = Vehicule
     template_name = 'vehicules/vehicule_list.html'
@@ -164,7 +164,7 @@ class VehiculeDeleteView(AdminRequiredMixin, DeleteView):
 
 
 # Vues pour les réparations
-class ReparationVehiculeListView(AdminRequiredMixin, ListView):
+class ReparationVehiculeListView(LoginRequiredMixin, ListView):
     """Liste de toutes les réparations."""
     model = ReparationVehicule
     template_name = 'vehicules/reparation_list.html'
@@ -244,7 +244,7 @@ class ReparationVehiculeCreateView(AdminRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class ReparationVehiculeDetailView(AdminRequiredMixin, DetailView):
+class ReparationVehiculeDetailView(LoginRequiredMixin, DetailView):
     """Détails d'une réparation."""
     model = ReparationVehicule
     template_name = 'vehicules/reparation_detail.html'
@@ -436,7 +436,7 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
 
 
 # Vues pour les types de réparation
-class TypeReparationListView(AdminRequiredMixin, ListView):
+class TypeReparationListView(LoginRequiredMixin, ListView):
     """Liste des types de réparation."""
     model = TypeReparation
     template_name = 'vehicules/type_reparation_list.html'

@@ -16,7 +16,7 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
         return self.request.user.has_global_access
 
 
-class LigneListView(AdminRequiredMixin, ListView):
+class LigneListView(LoginRequiredMixin, ListView):
     """Liste des lignes."""
     model = Ligne
     template_name = 'lignes/ligne_list.html'

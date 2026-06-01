@@ -4,10 +4,10 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models import Q
 from core.mixins import AdminRequiredMixin
-from .models import Utilisateur, Chauffeur, Convoyeur
+from .models import Utilisateur, Chauffeur, Convoyeur, Module
 from .forms import UtilisateurForm, ChauffeurForm, ConvoyeurForm
 from apps.compagnie.models import Compagnie
 import json
@@ -15,7 +15,7 @@ from datetime import date
 
 
 # Vues pour les utilisateurs
-class UtilisateurListView(AdminRequiredMixin, ListView):
+class UtilisateurListView(LoginRequiredMixin, ListView):
     """Liste des utilisateurs."""
     model = Utilisateur
     template_name = 'personnel/utilisateur_list.html'
@@ -117,8 +117,35 @@ class Reset2FAView(LoginRequiredMixin, View):
         StaticDevice.objects.filter(user=user).delete()
 
 
+class ModulesUtilisateurView(LoginRequiredMixin, View):
+    """Gestion des modules autorisés pour un utilisateur. Réservé au super_admin."""
+
+    def _check_permission(self, request):
+        if not (request.user.is_superuser or request.user.role == 'super_admin'):
+            raise PermissionDenied
+
+    def get(self, request, pk):
+        self._check_permission(request)
+        cible = get_object_or_404(Utilisateur, pk=pk)
+        tous_modules = Module.objects.filter(actif=True).order_by('ordre')
+        modules_actifs = set(cible.modules_autorises.values_list('pk', flat=True))
+        return render(request, 'personnel/utilisateur_modules.html', {
+            'cible': cible,
+            'tous_modules': tous_modules,
+            'modules_actifs': modules_actifs,
+        })
+
+    def post(self, request, pk):
+        self._check_permission(request)
+        cible = get_object_or_404(Utilisateur, pk=pk)
+        selected_ids = request.POST.getlist('modules')
+        cible.modules_autorises.set(Module.objects.filter(pk__in=selected_ids))
+        messages.success(request, f'Accès aux modules mis à jour pour {cible.nom_complet}.')
+        return redirect('personnel:utilisateur_list')
+
+
 # Vues pour les chauffeurs
-class ChauffeurListView(AdminRequiredMixin, ListView):
+class ChauffeurListView(LoginRequiredMixin, ListView):
     """Liste des chauffeurs."""
     model = Chauffeur
     template_name = 'personnel/chauffeur_list.html'
@@ -187,7 +214,7 @@ class ChauffeurDeleteView(AdminRequiredMixin, DeleteView):
         return super().form_valid(form)
 
 
-class ChauffeurDetailView(AdminRequiredMixin, DetailView):
+class ChauffeurDetailView(LoginRequiredMixin, DetailView):
     """Fiche détail d'un chauffeur avec son activité voyages."""
     model = Chauffeur
     template_name = 'personnel/chauffeur_detail.html'
@@ -247,7 +274,7 @@ class ChauffeurDetailView(AdminRequiredMixin, DetailView):
 
 
 # Vues pour les convoyeurs
-class ConvoyeurListView(AdminRequiredMixin, ListView):
+class ConvoyeurListView(LoginRequiredMixin, ListView):
     """Liste des convoyeurs."""
     model = Convoyeur
     template_name = 'personnel/convoyeur_list.html'
