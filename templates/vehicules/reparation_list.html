@@ -24,6 +24,7 @@
     right: 24px;
     top: -10px;
     line-height: 1;
+    pointer-events: none;
 }
 .page-header h4 { font-weight: 700; margin: 0; }
 
@@ -41,18 +42,22 @@
     border-radius: 8px;
     font-weight: 700;
     font-size: 13px;
-    padding: 7px 16px;
+    padding: 8px 18px;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     transition: all 0.15s;
     white-space: nowrap;
+    position: relative;
+    z-index: 1;
 }
-.btn-header.primary { background: #fff; color: var(--color-accent); border: none; }
-.btn-header.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); color: var(--color-accent); }
-.btn-header.outline { background: rgba(255,255,255,0.2); color: #fff; border: 1.5px solid rgba(255,255,255,0.4); }
-.btn-header.outline:hover { background: rgba(255,255,255,0.3); color: #fff; }
+/* Ajouter une réparation — orange */
+.btn-header.primary { background: #E67E22; color: #fff; border: none; }
+.btn-header.primary:hover { background: #cf6d1a; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(230,126,34,0.4); color: #fff; }
+/* Voir le rapport — vert */
+.btn-header.outline { background: #27ae60; color: #fff; border: none; }
+.btn-header.outline:hover { background: #219a52; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(39,174,96,0.4); }
 
 /* ── Filtres ─────────────────────────────────────────────── */
 .filter-zone {
@@ -229,12 +234,12 @@ Macro pour générer les paramètres de pagination en conservant les filtres.
                 </div>
             </div>
         </div>
-        <div class="d-flex flex-column gap-2 align-items-end">
-            <a href="{% url 'vehicules:reparation_create' %}" class="btn-header primary">
-                <i class="bi bi-plus-circle"></i>Ajouter une réparation
-            </a>
+        <div class="d-flex flex-row gap-2 align-items-center flex-wrap">
             <a href="{% url 'vehicules:rapport_reparations' %}" class="btn-header outline">
                 <i class="bi bi-bar-chart-fill"></i>Voir le rapport
+            </a>
+            <a href="{% url 'vehicules:reparation_create' %}" class="btn-header primary">
+                <i class="bi bi-plus-circle-fill"></i>Ajouter une réparation
             </a>
         </div>
     </div>

@@ -243,6 +243,11 @@ class Vehicule(models.Model):
         verbose_name="Date d'expiration licence de transport"
     )
 
+    kilometrage_actuel = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Kilométrage actuel",
+        help_text="Compteur km total du véhicule (mis à jour automatiquement à chaque voyage terminé)"
+    )
     date_creation = models.DateTimeField(auto_now_add=True)
     date_modification = models.DateTimeField(auto_now=True)
 
@@ -301,6 +306,11 @@ class TypeReparation(models.Model):
         blank=True,
         verbose_name="Description"
     )
+    is_vidange = models.BooleanField(
+        default=False,
+        verbose_name="C'est une vidange",
+        help_text="Cocher si ce type de réparation est une vidange (huile + intervalle requis)"
+    )
     actif = models.BooleanField(
         default=True,
         verbose_name="Actif"
@@ -324,6 +334,11 @@ class ReparationVehicule(models.Model):
         ('en_attente', 'En attente'),
         ('en_cours', 'En cours'),
         ('terminee', 'Terminée'),
+    ]
+
+    INTERVALLE_VIDANGE_CHOICES = [
+        (5000, '5 000 km'),
+        (10000, '10 000 km'),
     ]
 
     vehicule = models.ForeignKey(
@@ -363,6 +378,19 @@ class ReparationVehicule(models.Model):
         choices=STATUT_CHOICES,
         default='terminee',
         verbose_name="Statut"
+    )
+    huile_utilisee = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Huile utilisée",
+        help_text="Type/marque d'huile utilisée (ex: Total Rubia 15W40)"
+    )
+    intervalle_vidange = models.PositiveIntegerField(
+        choices=INTERVALLE_VIDANGE_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Intervalle vidange",
+        help_text="Kilométrage avant la prochaine vidange"
     )
     creee_depuis_guichet = models.BooleanField(
         default=False,

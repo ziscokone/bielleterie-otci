@@ -53,6 +53,23 @@
                         </div>
 
                         <div class="mb-3">
+                            <div class="p-3" style="background:#e0f2fe;border-radius:8px;border:1px solid #bae6fd;">
+                                <div class="form-check">
+                                    {{ form.is_vidange }}
+                                    <label class="form-check-label fw-bold" for="{{ form.is_vidange.id_for_label }}">
+                                        <i class="bi bi-droplet-fill me-1 text-primary"></i>{{ form.is_vidange.label }}
+                                    </label>
+                                </div>
+                                {% if form.is_vidange.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.is_vidange.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted d-block mt-1">
+                                    Si coché, le formulaire de réparation demandera l'huile utilisée et l'intervalle de la prochaine vidange.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
                             <div class="form-check">
                                 {{ form.actif }}
                                 <label class="form-check-label" for="{{ form.actif.id_for_label }}">

@@ -80,7 +80,7 @@ class VehiculeForm(forms.ModelForm):
             'modele', 'immatriculation', 'actif', 'notes',
             # Caractéristiques techniques
             'numero_chassis', 'annee_fabrication', 'date_mise_circulation',
-            'type_carburant', 'type_boite',
+            'type_carburant', 'type_boite', 'kilometrage_actuel',
             # Documents & conformité légale
             'compagnie_assurance', 'date_expiration_assurance',
             'date_expiration_visite_technique', 'date_expiration_carte_grise',
@@ -124,6 +124,11 @@ class VehiculeForm(forms.ModelForm):
             'type_boite': forms.Select(attrs={
                 'class': 'form-select',
             }),
+            'kilometrage_actuel': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: 150000',
+                'min': '0'
+            }),
             # Documents & conformité légale
             'compagnie_assurance': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -158,6 +163,7 @@ class VehiculeForm(forms.ModelForm):
             'date_mise_circulation': 'Date de mise en circulation',
             'type_carburant': 'Type de carburant',
             'type_boite': 'Type de boîte de vitesse',
+            'kilometrage_actuel': 'Kilométrage actuel (km)',
             # Documents & conformité légale
             'compagnie_assurance': 'Compagnie d\'assurance',
             'date_expiration_assurance': 'Date d\'expiration assurance',
@@ -175,7 +181,7 @@ class ReparationVehiculeForm(forms.ModelForm):
         fields = [
             'vehicule', 'date_reparation', 'type_reparation', 'description',
             'garage_prestataire', 'montant', 'kilometrage', 'pieces_remplacees',
-            'statut'
+            'statut', 'huile_utilisee', 'intervalle_vidange',
         ]
         widgets = {
             'vehicule': forms.Select(attrs={
@@ -187,6 +193,7 @@ class ReparationVehiculeForm(forms.ModelForm):
             }),
             'type_reparation': forms.Select(attrs={
                 'class': 'form-select',
+                'id': 'id_type_reparation',
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -216,6 +223,13 @@ class ReparationVehiculeForm(forms.ModelForm):
             'statut': forms.Select(attrs={
                 'class': 'form-select',
             }),
+            'huile_utilisee': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: Total Rubia 15W40'
+            }),
+            'intervalle_vidange': forms.Select(attrs={
+                'class': 'form-select',
+            }),
         }
         labels = {
             'vehicule': 'Véhicule',
@@ -224,15 +238,32 @@ class ReparationVehiculeForm(forms.ModelForm):
             'description': 'Description',
             'garage_prestataire': 'Garage/Prestataire',
             'montant': 'Montant (FCFA)',
-            'kilometrage': 'Kilométrage (optionnel)',
+            'kilometrage': 'Kilométrage au moment de la vidange',
             'pieces_remplacees': 'Pièces remplacées (optionnel)',
             'statut': 'Statut',
+            'huile_utilisee': 'Huile utilisée',
+            'intervalle_vidange': 'Intervalle (prochaine vidange)',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filtrer uniquement les types actifs
         self.fields['type_reparation'].queryset = TypeReparation.objects.filter(actif=True)
+        # Récupérer les IDs des types vidange pour le JS
+        self.vidange_type_ids = list(
+            TypeReparation.objects.filter(actif=True, is_vidange=True).values_list('id', flat=True)
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        type_rep = cleaned_data.get('type_reparation')
+        if type_rep and type_rep.is_vidange:
+            if not cleaned_data.get('huile_utilisee'):
+                self.add_error('huile_utilisee', "L'huile est obligatoire pour une vidange.")
+            if not cleaned_data.get('intervalle_vidange'):
+                self.add_error('intervalle_vidange', "L'intervalle est obligatoire pour une vidange.")
+            if not cleaned_data.get('kilometrage'):
+                self.add_error('kilometrage', "Le kilométrage est obligatoire pour une vidange.")
+        return cleaned_data
 
 
 class TypeReparationForm(forms.ModelForm):
@@ -240,7 +271,7 @@ class TypeReparationForm(forms.ModelForm):
 
     class Meta:
         model = TypeReparation
-        fields = ['nom', 'description', 'actif']
+        fields = ['nom', 'description', 'is_vidange', 'actif']
         widgets = {
             'nom': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -251,6 +282,9 @@ class TypeReparationForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Description du type de réparation...'
             }),
+            'is_vidange': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
             'actif': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
@@ -258,5 +292,6 @@ class TypeReparationForm(forms.ModelForm):
         labels = {
             'nom': 'Nom',
             'description': 'Description',
+            'is_vidange': "C'est une vidange",
             'actif': 'Actif',
         }

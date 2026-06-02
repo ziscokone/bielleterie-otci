@@ -1,4 +1,4 @@
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView, View
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -151,6 +151,24 @@ class VehiculeUpdateView(AdminRequiredMixin, UpdateView):
         messages.success(self.request, 'Véhicule modifié avec succès.')
         return super().form_valid(form)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        vehicule = self.object
+        vidanges = vehicule.reparations.filter(
+            type_reparation__is_vidange=True
+        ).select_related('type_reparation').order_by('-date_reparation')
+        context['vidanges'] = vidanges
+        derniere_vidange = vidanges.first()
+        context['derniere_vidange'] = derniere_vidange
+        if (derniere_vidange
+                and derniere_vidange.intervalle_vidange
+                and derniere_vidange.kilometrage is not None):
+            km_prochaine = derniere_vidange.kilometrage + derniere_vidange.intervalle_vidange
+            km_restants = km_prochaine - (vehicule.kilometrage_actuel or 0)
+            context['km_prochaine_vidange'] = km_prochaine
+            context['km_restants_vidange'] = km_restants
+        return context
+
 
 class VehiculeDeleteView(AdminRequiredMixin, DeleteView):
     """Supprimer un véhicule."""
@@ -227,14 +245,17 @@ class ReparationVehiculeCreateView(AdminRequiredMixin, CreateView):
 
     def get_initial(self):
         initial = super().get_initial()
-        # Pré-remplir le véhicule si passé en paramètre
         vehicule_id = self.request.GET.get('vehicule')
         if vehicule_id:
             initial['vehicule'] = vehicule_id
         return initial
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['vidange_type_ids'] = self.get_form().vidange_type_ids
+        return context
+
     def get_success_url(self):
-        # Rediriger vers la page de modification du véhicule si venant de là
         if self.request.GET.get('from_vehicule'):
             return reverse_lazy('vehicules:vehicule_update', kwargs={'pk': self.object.vehicule.pk})
         return reverse_lazy('vehicules:reparation_list')
@@ -264,12 +285,29 @@ class ReparationVehiculeUpdateView(AdminRequiredMixin, UpdateView):
             return redirect('vehicules:reparation_detail', pk=reparation.pk)
         return super().dispatch(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['vidange_type_ids'] = self.get_form().vidange_type_ids
+        return context
+
     def get_success_url(self):
         return reverse_lazy('vehicules:reparation_detail', kwargs={'pk': self.object.pk})
 
     def form_valid(self, form):
         messages.success(self.request, 'Réparation modifiée avec succès.')
         return super().form_valid(form)
+
+
+class ReparationVehiculeTerminerView(AdminRequiredMixin, View):
+    """Passe une réparation au statut 'terminée' en un clic."""
+
+    def post(self, request, pk):
+        reparation = get_object_or_404(ReparationVehicule, pk=pk)
+        if reparation.statut != 'terminee':
+            reparation.statut = 'terminee'
+            reparation.save(update_fields=['statut', 'date_modification'])
+            messages.success(request, f'La réparation a été marquée comme terminée.')
+        return redirect('vehicules:reparation_detail', pk=pk)
 
 
 class ReparationVehiculeDeleteView(AdminRequiredMixin, DeleteView):

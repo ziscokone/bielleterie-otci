@@ -4,234 +4,327 @@
 
 {% block extra_css %}
 <style>
-/* ── Header gradient ──────────────────────────────────── */
-.form-header {
-    background: linear-gradient(135deg, #1e3260 0%, var(--color-accent) 100%);
-    border-radius: 14px 14px 0 0;
-    padding: 22px 28px;
+/* ── Page ─────────────────────────────────────────────── */
+.rep-page { background: #f4f6fb; min-height: 100vh; padding: 32px 0; }
+
+/* ── Header de page ───────────────────────────────────── */
+.rep-page-header {
+    background: #1e3260;
+    border-radius: 12px;
+    padding: 22px 32px;
     color: #fff;
-    position: relative;
-    overflow: hidden;
-}
-.form-header::after {
-    content: '\F4D4';
-    font-family: 'Bootstrap-Icons';
-    font-size: 8rem;
-    opacity: 0.06;
-    position: absolute;
-    right: 20px;
-    top: -8px;
-    line-height: 1;
-}
-.form-header h4 { font-weight: 700; margin: 0; font-size: 1.2rem; }
-
-.rep-chip {
-    background: rgba(255,255,255,0.18);
-    border-radius: 8px;
-    padding: 4px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-/* ── Sections ─────────────────────────────────────────── */
-.section-card {
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
-    margin-bottom: 20px;
-    overflow: hidden;
-}
-.section-card .section-header {
-    padding: 12px 18px;
-    font-weight: 700;
-    font-size: 13px;
+    margin-bottom: 24px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid #f0f0f0;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
 }
-.section-card .section-body { padding: 18px; background: #fff; }
+.rep-page-header h4 { font-weight: 700; margin: 0; font-size: 1.15rem; letter-spacing: -.2px; }
+.rep-page-header .sub { font-size: 12px; opacity: .7; margin-top: 3px; }
+.rep-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 20px;
+    padding: 3px 11px;
+    font-size: 11px; font-weight: 600;
+}
+.btn-back {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,.12);
+    border: 1.5px solid rgba(255,255,255,.25);
+    color: #fff; border-radius: 8px;
+    padding: 7px 16px; font-size: 13px; font-weight: 600;
+    text-decoration: none; transition: background .15s;
+}
+.btn-back:hover { background: rgba(255,255,255,.22); color: #fff; }
 
-.sec-planning  .section-header { background: #eff6ff; color: #1e40af; }
-.sec-interv    .section-header { background: #fefce8; color: #854d0e; }
+/* ── Card principale ──────────────────────────────────── */
+.rep-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 16px rgba(30,50,96,.08);
+    overflow: hidden;
+    border: 1px solid #e8ecf4;
+}
 
-.form-label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+/* ── Section ──────────────────────────────────────────── */
+.form-section { padding: 28px 32px; border-bottom: 1px solid #f0f3f9; }
+.form-section:last-of-type { border-bottom: none; }
+
+.section-title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 700;
+    color: #1e3260;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eef1f9;
+}
+.section-title i { font-size: 15px; color: var(--color-accent); }
+
+/* ── Champs ───────────────────────────────────────────── */
+.field-label {
+    font-size: 12px; font-weight: 600;
+    color: #4b5563;
+    margin-bottom: 5px;
+    display: flex; align-items: center; gap: 5px;
+}
+.field-label i { color: #9ca3af; font-size: 13px; }
+.req { color: #dc2626; margin-left: 1px; }
+.field-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+
+/* ── Vidange section ──────────────────────────────────── */
+.vidange-section {
+    background: #f0f7ff;
+    border-top: 2px solid #3b82f6;
+    padding: 24px 32px;
+    display: none;
+}
+.vidange-section .section-title { color: #1d4ed8; border-bottom-color: #dbeafe; }
+.vidange-section .section-title i { color: #3b82f6; }
+
+/* ── Footer ───────────────────────────────────────────── */
+.form-footer {
+    padding: 20px 32px;
+    background: #fafbfd;
+    border-top: 1px solid #f0f3f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.btn-submit {
+    background: #1e3260;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 28px;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+}
+.btn-submit:hover { background: #162649; transform: translateY(-1px); }
+
+.btn-cancel-footer {
+    color: #6b7280; font-size: 13px; font-weight: 500;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+}
+.btn-cancel-footer:hover { color: #374151; }
+
+/* ── Inputs ───────────────────────────────────────────── */
+.form-control, .form-select {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 7px;
+    font-size: 13px;
+    padding: 9px 12px;
+    color: #111827;
+    transition: border-color .15s, box-shadow .15s;
+    background: #fff;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #1e3260;
+    box-shadow: 0 0 0 3px rgba(30,50,96,.1);
+    outline: none;
+}
+textarea.form-control { resize: vertical; min-height: 90px; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow-sm" style="border:none;border-radius:14px;overflow:hidden;">
+<div class="rep-page">
+<div class="container-fluid px-4" style="max-width:1100px;margin:auto;">
 
-                <!-- ── Header ── -->
-                <div class="form-header">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h4>
-                                <i class="bi bi-tools me-2"></i>
-                                {% if form.instance.pk %}Modifier la réparation{% else %}Nouvelle réparation{% endif %}
-                            </h4>
-                            {% if form.instance.pk %}
-                            <div class="d-flex gap-2 mt-2 flex-wrap">
-                                <span class="rep-chip">
-                                    <i class="bi bi-bus-front"></i>{{ form.instance.vehicule.immatriculation }}
-                                </span>
-                                <span class="rep-chip">
-                                    <i class="bi bi-wrench"></i>{{ form.instance.type_reparation.nom }}
-                                </span>
-                                <span class="rep-chip">
-                                    {% if form.instance.statut == 'terminee' %}
-                                        <i class="bi bi-check-circle"></i> Terminée
-                                    {% elif form.instance.statut == 'en_cours' %}
-                                        <i class="bi bi-hourglass-split"></i> En cours
-                                    {% else %}
-                                        <i class="bi bi-clock"></i> En attente
-                                    {% endif %}
-                                </span>
-                            </div>
-                            {% else %}
-                            <div class="mt-1" style="font-size:12px;opacity:0.8;">
-                                Remplissez les informations de la réparation
-                            </div>
-                            {% endif %}
-                        </div>
-                        <a href="{% url 'vehicules:reparation_list' %}" class="btn btn-sm"
-                           style="background:rgba(255,255,255,0.2);color:#fff;border:1.5px solid rgba(255,255,255,0.4);font-weight:600;">
-                            <i class="bi bi-arrow-left me-1"></i>Annuler
-                        </a>
+    <!-- ── Header ── -->
+    <div class="rep-page-header">
+        <div>
+            <h4>
+                <i class="bi bi-tools me-2"></i>
+                {% if form.instance.pk %}Modifier la réparation{% else %}Nouvelle réparation{% endif %}
+            </h4>
+            {% if form.instance.pk %}
+            <div class="d-flex gap-2 mt-2 flex-wrap">
+                <span class="rep-chip"><i class="bi bi-bus-front"></i>{{ form.instance.vehicule.immatriculation }}</span>
+                <span class="rep-chip"><i class="bi bi-wrench"></i>{{ form.instance.type_reparation.nom }}</span>
+                <span class="rep-chip">
+                    {% if form.instance.statut == 'terminee' %}<i class="bi bi-check-circle"></i> Terminée
+                    {% elif form.instance.statut == 'en_cours' %}<i class="bi bi-hourglass-split"></i> En cours
+                    {% else %}<i class="bi bi-clock"></i> En attente{% endif %}
+                </span>
+            </div>
+            {% else %}
+            <div class="sub">Remplissez les informations de la réparation à enregistrer</div>
+            {% endif %}
+        </div>
+        <a href="{% url 'vehicules:reparation_list' %}" class="btn-back">
+            <i class="bi bi-arrow-left"></i> Annuler
+        </a>
+    </div>
+
+    <!-- ── Formulaire ── -->
+    <div class="rep-card">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="mx-4 mt-4">
+                <div class="alert alert-danger py-2 px-3" style="font-size:13px;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>{{ form.non_field_errors }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ══ Section 1 : Identification ══ -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="bi bi-card-list"></i> Identification
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="field-label"><i class="bi bi-bus-front"></i>{{ form.vehicule.label }}<span class="req">*</span></div>
+                        {{ form.vehicule }}
+                        {% if form.vehicule.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.vehicule.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <div class="field-label"><i class="bi bi-calendar-event"></i>{{ form.date_reparation.label }}<span class="req">*</span></div>
+                        {{ form.date_reparation }}
+                        {% if form.date_reparation.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.date_reparation.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <div class="field-label"><i class="bi bi-wrench"></i>{{ form.type_reparation.label }}<span class="req">*</span></div>
+                        {{ form.type_reparation }}
+                        {% if form.type_reparation.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.type_reparation.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        <div class="field-label"><i class="bi bi-flag"></i>{{ form.statut.label }}<span class="req">*</span></div>
+                        {{ form.statut }}
+                        {% if form.statut.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.statut.errors }}</div>{% endif %}
                     </div>
                 </div>
-
-                <!-- ── Corps ── -->
-                <div class="card-body p-4">
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-
-                        {% if form.non_field_errors %}
-                            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-                        {% endif %}
-
-                        <!-- Section : Véhicule & Planning -->
-                        <div class="section-card sec-planning">
-                            <div class="section-header">
-                                <i class="bi bi-bus-front"></i> Véhicule &amp; Planning
-                            </div>
-                            <div class="section-body">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-bus-front me-1 text-muted"></i>{{ form.vehicule.label }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.vehicule }}
-                                        {% if form.vehicule.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.vehicule.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-calendar-event me-1 text-muted"></i>{{ form.date_reparation.label }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.date_reparation }}
-                                        {% if form.date_reparation.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.date_reparation.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-wrench me-1 text-muted"></i>{{ form.type_reparation.label }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.type_reparation }}
-                                        {% if form.type_reparation.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.type_reparation.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-flag me-1 text-muted"></i>{{ form.statut.label }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.statut }}
-                                        {% if form.statut.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.statut.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section : Intervention -->
-                        <div class="section-card sec-interv">
-                            <div class="section-header">
-                                <i class="bi bi-gear-fill"></i> Intervention
-                            </div>
-                            <div class="section-body">
-                                <div class="row g-3">
-                                    <div class="col-md-8">
-                                        <label class="form-label">
-                                            <i class="bi bi-building me-1 text-muted"></i>{{ form.garage_prestataire.label }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.garage_prestataire }}
-                                        {% if form.garage_prestataire.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.garage_prestataire.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">
-                                            <i class="bi bi-currency-exchange me-1 text-muted"></i>{{ form.montant.label }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.montant }}
-                                        {% if form.montant.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.montant.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label">
-                                            <i class="bi bi-speedometer2 me-1 text-muted"></i>{{ form.kilometrage.label }}
-                                            <span class="text-muted fw-normal">(optionnel)</span>
-                                        </label>
-                                        {{ form.kilometrage }}
-                                        {% if form.kilometrage.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.kilometrage.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label">
-                                            <i class="bi bi-file-text me-1 text-muted"></i>{{ form.description.label }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.description }}
-                                        {% if form.description.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.description.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label">
-                                            <i class="bi bi-gear-fill me-1 text-muted"></i>{{ form.pieces_remplacees.label }}
-                                            <span class="text-muted fw-normal">(optionnel)</span>
-                                        </label>
-                                        {{ form.pieces_remplacees }}
-                                        {% if form.pieces_remplacees.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.pieces_remplacees.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Bouton submit -->
-                        <div class="d-flex justify-content-end mt-2">
-                            <button type="submit" class="btn btn-primary fw-bold px-4">
-                                <i class="bi bi-check-circle me-1"></i>
-                                {% if form.instance.pk %}Enregistrer les modifications{% else %}Créer la réparation{% endif %}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
             </div>
-        </div>
+
+            <!-- ══ Section 2 : Intervention ══ -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="bi bi-gear-fill"></i> Détails de l'intervention
+                </div>
+                <div class="row g-3">
+                    <!-- Ligne 1 : Garage + Montant + Km -->
+                    <div class="col-md-5">
+                        <div class="field-label"><i class="bi bi-building"></i>{{ form.garage_prestataire.label }}<span class="req">*</span></div>
+                        {{ form.garage_prestataire }}
+                        {% if form.garage_prestataire.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.garage_prestataire.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <div class="field-label"><i class="bi bi-currency-exchange"></i>{{ form.montant.label }}<span class="req">*</span></div>
+                        {{ form.montant }}
+                        {% if form.montant.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.montant.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4" id="km-field-wrapper">
+                        <div class="field-label">
+                            <i class="bi bi-speedometer2"></i>
+                            <span id="km-label-text">{{ form.kilometrage.label }}</span>
+                            <span class="text-muted fw-normal" id="km-optional-hint" style="font-size:11px;">(optionnel)</span>
+                            <span class="req d-none" id="km-required-hint">*</span>
+                        </div>
+                        {{ form.kilometrage }}
+                        {% if form.kilometrage.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.kilometrage.errors }}</div>{% endif %}
+                    </div>
+
+                    <!-- Ligne 2 : Description -->
+                    <div class="col-12">
+                        <div class="field-label"><i class="bi bi-file-text"></i>{{ form.description.label }}<span class="req">*</span></div>
+                        {{ form.description }}
+                        {% if form.description.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.description.errors }}</div>{% endif %}
+                    </div>
+
+                    <!-- Ligne 3 : Pièces remplacées -->
+                    <div class="col-12">
+                        <div class="field-label"><i class="bi bi-box-seam"></i>{{ form.pieces_remplacees.label }} <span style="font-size:11px;color:#9ca3af;font-weight:400;">(optionnel)</span></div>
+                        {{ form.pieces_remplacees }}
+                        {% if form.pieces_remplacees.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.pieces_remplacees.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ Section 3 : Vidange (conditionnelle) ══ -->
+            <div class="vidange-section" id="vidange-section">
+                <div class="section-title">
+                    <i class="bi bi-droplet-fill"></i> Informations vidange
+                </div>
+                <div class="row g-3 align-items-start">
+                    <div class="col-md-6">
+                        <div class="field-label"><i class="bi bi-droplet"></i>{{ form.huile_utilisee.label }}<span class="req">*</span></div>
+                        {{ form.huile_utilisee }}
+                        {% if form.huile_utilisee.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.huile_utilisee.errors }}</div>{% endif %}
+                        <div class="field-hint">Ex : Total Rubia 15W40, Mobil Super 10W40…</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="field-label"><i class="bi bi-arrow-repeat"></i>Durée de l'huile<span class="req">*</span></div>
+                        {{ form.intervalle_vidange }}
+                        {% if form.intervalle_vidange.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.intervalle_vidange.errors }}</div>{% endif %}
+                        <div class="field-hint">Prochaine vidange après ce kilométrage</div>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-center" style="padding-top:20px;">
+                        <div style="background:#dbeafe;border-radius:8px;padding:10px 14px;font-size:12px;color:#1d4ed8;line-height:1.4;">
+                            <i class="bi bi-lightbulb-fill me-1"></i>
+                            Le km au compteur (saisi ci-dessus) + la durée = date de la prochaine vidange.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ Footer ══ -->
+            <div class="form-footer">
+                <a href="{% url 'vehicules:reparation_list' %}" class="btn-cancel-footer">
+                    <i class="bi bi-x-circle"></i> Annuler
+                </a>
+                <button type="submit" class="btn-submit">
+                    <i class="bi bi-check-circle-fill"></i>
+                    {% if form.instance.pk %}Enregistrer les modifications{% else %}Créer la réparation{% endif %}
+                </button>
+            </div>
+        </form>
     </div>
+
 </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const vidangeIds = new Set({{ vidange_type_ids|default:"[]" }});
+    const typeSelect = document.getElementById('id_type_reparation');
+    const vidangeSection = document.getElementById('vidange-section');
+    const kmOptional = document.getElementById('km-optional-hint');
+    const kmRequired = document.getElementById('km-required-hint');
+    const kmLabelText = document.getElementById('km-label-text');
+
+    function toggleVidange() {
+        const selectedId = parseInt(typeSelect.value);
+        const isVidange = vidangeIds.has(selectedId);
+
+        vidangeSection.style.display = isVidange ? 'block' : 'none';
+
+        if (isVidange) {
+            kmLabelText.textContent = 'Km au compteur lors de la vidange';
+            kmOptional.classList.add('d-none');
+            kmRequired.classList.remove('d-none');
+        } else {
+            kmLabelText.textContent = 'Kilométrage';
+            kmOptional.classList.remove('d-none');
+            kmRequired.classList.add('d-none');
+        }
+    }
+
+    if (typeSelect) {
+        typeSelect.addEventListener('change', toggleVidange);
+        toggleVidange();
+    }
+})();
+</script>
 {% endblock %}

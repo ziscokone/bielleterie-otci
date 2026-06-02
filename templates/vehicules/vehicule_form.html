@@ -1,364 +1,449 @@
 {% extends 'base.html' %}
 
-{% block title %}{% if form.instance.pk %}Modifier{% else %}Nouveau{% endif %} Véhicule{% endblock %}
+{% block title %}{% if form.instance.pk %}{{ form.instance.immatriculation }}{% else %}Nouveau Véhicule{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>
-/* ── En-tête gradient ─────────────────────────────────── */
-.form-header {
-    background: linear-gradient(135deg, #1e3260 0%, var(--color-accent) 100%);
-    border-radius: 14px 14px 0 0;
-    padding: 22px 28px;
-    color: #fff;
-    position: relative;
-    overflow: hidden;
-}
-.form-header::after {
-    content: '\F4DA';
-    font-family: 'Bootstrap-Icons';
-    font-size: 8rem;
-    opacity: 0.06;
-    position: absolute;
-    right: 20px;
-    top: -8px;
-    line-height: 1;
-    pointer-events: none;
-}
-.form-header h4 { font-weight: 700; margin: 0; font-size: 1.2rem; }
-.form-header .sub { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+/* ── Page ──────────────────────────────────────────────── */
+.veh-page { background: #f4f6fb; min-height: 100vh; padding: 32px 0; }
 
-/* Mini résumé en mode édition */
-.veh-summary {
+/* ── Header ────────────────────────────────────────────── */
+.veh-header {
+    background: #1e3260;
+    border-radius: 12px 12px 0 0;
+    padding: 24px 32px;
+    color: #fff;
     display: flex;
-    gap: 16px;
+    align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
-    margin-top: 12px;
+    gap: 12px;
+}
+.veh-header-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -.3px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.veh-header-title i { font-size: 1rem; opacity: .8; }
+.veh-header-sub { font-size: 12px; opacity: .6; margin-top: 3px; }
+
+.veh-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
 }
 .veh-chip {
-    background: rgba(255,255,255,0.18);
-    border-radius: 8px;
-    padding: 5px 12px;
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 20px;
+    padding: 3px 11px;
+    font-size: 11px; font-weight: 600;
+}
+.veh-chip.actif   { background: rgba(39,174,96,.25); border-color: rgba(39,174,96,.4); }
+.veh-chip.inactif { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.15); opacity: .7; }
+
+.btn-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,.1);
+    border: 1.5px solid rgba(255,255,255,.22);
+    color: #fff; border-radius: 8px;
+    padding: 7px 16px; font-size: 13px; font-weight: 600;
+    text-decoration: none; transition: background .15s;
+    flex-shrink: 0;
+}
+.btn-back:hover { background: rgba(255,255,255,.2); color: #fff; }
+
+/* ── Barre d'onglets ───────────────────────────────────── */
+.veh-tabs-bar {
+    background: #fff;
+    border-bottom: 1px solid #eaecf4;
+    display: flex;
+    padding: 0 32px;
+    gap: 0;
+}
+.veh-tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 14px 20px 11px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: color .15s, border-color .15s;
+    white-space: nowrap;
+    margin-bottom: -1px;
+    text-decoration: none;
+}
+.veh-tab-btn:hover { color: #1e3260; }
+.veh-tab-btn.active {
+    color: #1e3260;
+    border-bottom-color: #E67E22;
+    font-weight: 700;
+}
+.veh-tab-btn .tab-badge {
+    background: #fee2e2;
+    color: #dc2626;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.veh-tab-btn .tab-badge.warn {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* ── Contenu principal ─────────────────────────────────── */
+.veh-body {
+    background: #fff;
+    border-radius: 0 0 12px 12px;
+    padding: 32px;
+}
+
+/* ── Sections formulaire ───────────────────────────────── */
+.form-section { margin-bottom: 32px; }
+.form-section:last-of-type { margin-bottom: 0; }
+
+.section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: #1e3260;
+    margin-bottom: 18px;
+    padding-left: 12px;
+    border-left: 3px solid #E67E22;
+}
+.section-label i { color: #E67E22; font-size: 14px; }
+
+.section-divider {
+    border: none;
+    border-top: 1px solid #f0f3f9;
+    margin: 28px 0;
+}
+
+/* ── Champs ────────────────────────────────────────────── */
+.field-wrap { margin-bottom: 0; }
+.field-label {
     font-size: 12px;
     font-weight: 600;
+    color: #374151;
+    margin-bottom: 5px;
+    display: block;
+}
+.field-label .req { color: #dc2626; margin-left: 2px; }
+.field-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+
+.form-control, .form-select {
+    border: 1.5px solid #dde3ef;
+    border-radius: 8px;
+    font-size: 13px;
+    padding: 9px 12px;
+    color: #111827;
+    background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+    width: 100%;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #1e3260;
+    box-shadow: 0 0 0 3px rgba(30,50,96,.08);
+    outline: none;
+}
+textarea.form-control { resize: vertical; min-height: 90px; }
+
+/* Switch actif */
+.switch-row {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f8f9fc;
+    border: 1.5px solid #dde3ef;
+    border-radius: 8px;
+    height: 42px;
 }
+.switch-row label { font-size: 13px; font-weight: 600; color: #374151; margin: 0; cursor: pointer; }
 
-/* ── Onglets ──────────────────────────────────────────── */
-#vehiculeTabs .nav-link {
-    background-color: #4A6FA5;
-    color: white;
-    border: 1px solid #4A6FA5;
-    margin-right: 2px;
-    font-weight: 600;
+/* ── Footer formulaire ─────────────────────────────────── */
+.form-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 24px;
+    border-top: 1px solid #f0f3f9;
+    margin-top: 28px;
+}
+.btn-submit {
+    background: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 28px;
     font-size: 13px;
-}
-#vehiculeTabs .nav-link:hover  { background-color: #E67E22; color: white; border-color: #E67E22; }
-#vehiculeTabs .nav-link.active { background-color: #E67E22; color: white; border-color: #E67E22; }
-
-/* ── Sections du formulaire ───────────────────────────── */
-.section-card {
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
-    margin-bottom: 20px;
-    overflow: hidden;
-}
-.section-card .section-header {
-    padding: 12px 18px;
     font-weight: 700;
-    font-size: 13px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid #f0f0f0;
+    gap: 7px;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
 }
-.section-card .section-body { padding: 18px; background: #fff; }
+.btn-submit:hover { background: #219a52; transform: translateY(-1px); }
+.btn-cancel {
+    font-size: 13px; font-weight: 700; color: #fff;
+    background: #e74c3c;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: background .15s, transform .1s;
+}
+.btn-cancel:hover { background: #c0392b; color: #fff; transform: translateY(-1px); }
 
-.sec-info     .section-header { background: #eef2ff; color: #3730a3; }
-.sec-tech     .section-header { background: #fefce8; color: #854d0e; }
-.sec-docs     .section-header { background: #f0fdf4; color: #166534; }
-.sec-notes    .section-header { background: #f8f9fa; color: #374151; }
-
-/* Champ form stylistique */
-.form-label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px; }
-
-/* Badge statut dans le header */
-.badge-actif-sm   { background: rgba(255,255,255,0.25); border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600; }
-.badge-inactif-sm { background: rgba(0,0,0,0.2); border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600; }
+/* ── Tab pane ──────────────────────────────────────────── */
+.tab-pane-content { padding: 28px 32px; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card shadow-sm" style="border:none;border-radius:14px;overflow:hidden;">
+<div class="veh-page">
+<div class="container-fluid px-4" style="max-width:1400px;margin:auto;">
 
-                <!-- ── Header gradient ── -->
-                <div class="form-header">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h4>
-                                <i class="bi bi-bus-front me-2"></i>
-                                {% if form.instance.pk %}
-                                    {{ form.instance.immatriculation }}
-                                {% else %}
-                                    Nouveau Véhicule
-                                {% endif %}
-                            </h4>
-                            {% if form.instance.pk %}
-                            <div class="veh-summary">
-                                <div class="veh-chip">
-                                    <i class="bi bi-collection"></i>
-                                    {{ form.instance.modele.marque }} – {{ form.instance.modele.nom }}
-                                </div>
-                                <div class="veh-chip">
-                                    <i class="bi bi-people"></i>
-                                    {{ form.instance.modele.capacite }} places
-                                </div>
-                                <div class="veh-chip">
-                                    <i class="bi bi-tools"></i>
-                                    {{ form.instance.reparations.count }} réparation{{ form.instance.reparations.count|pluralize }}
-                                </div>
-                                {% if form.instance.actif %}
-                                    <span class="badge-actif-sm"><i class="bi bi-check-circle me-1"></i>Actif</span>
-                                {% else %}
-                                    <span class="badge-inactif-sm"><i class="bi bi-pause-circle me-1"></i>Inactif</span>
-                                {% endif %}
-                            </div>
-                            {% else %}
-                            <div class="sub">Remplissez les informations du nouveau véhicule</div>
-                            {% endif %}
-                        </div>
-                        <a href="{% url 'vehicules:vehicule_list' %}" class="btn btn-sm"
-                           style="background:rgba(255,255,255,0.2);color:#fff;border:1.5px solid rgba(255,255,255,0.4);font-weight:600;">
-                            <i class="bi bi-arrow-left me-1"></i>Retour
-                        </a>
-                    </div>
-                </div>
+    <div style="border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(30,50,96,.1);">
 
+        <!-- ══ Header ══ -->
+        <div class="veh-header">
+            <div>
+                <h1 class="veh-header-title">
+                    <i class="bi bi-bus-front"></i>
+                    {% if form.instance.pk %}{{ form.instance.immatriculation }}{% else %}Nouveau Véhicule{% endif %}
+                </h1>
                 {% if form.instance.pk %}
-                <!-- Onglets en mode édition -->
-                <ul class="nav nav-tabs nav-fill" id="vehiculeTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="infos-tab" data-bs-toggle="tab"
-                                data-bs-target="#infos" type="button" role="tab">
-                            <i class="bi bi-info-circle me-2"></i>Informations
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="reparations-tab" data-bs-toggle="tab"
-                                data-bs-target="#reparations" type="button" role="tab">
-                            <i class="bi bi-tools me-2"></i>Réparations
-                            {% with nb=form.instance.reparations.count %}
-                                {% if nb > 0 %}
-                                    <span class="badge bg-danger ms-1">{{ nb }}</span>
-                                {% endif %}
-                            {% endwith %}
-                        </button>
-                    </li>
-                </ul>
-                <div class="tab-content" id="vehiculeTabContent">
-                <div class="tab-pane fade show active" id="infos" role="tabpanel">
-                {% endif %}
-
-                <!-- ── Corps du formulaire ── -->
-                <div class="card-body p-4">
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-
-                        {% if form.non_field_errors %}
-                            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-                        {% endif %}
-
-                        <!-- Section : Informations générales -->
-                        <div class="section-card sec-info">
-                            <div class="section-header">
-                                <i class="bi bi-bus-front"></i> Informations générales
-                            </div>
-                            <div class="section-body">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            {{ form.modele.label }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.modele }}
-                                        {% if form.modele.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.modele.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            {{ form.immatriculation.label }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.immatriculation }}
-                                        {% if form.immatriculation.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.immatriculation.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="form-check form-switch">
-                                            {{ form.actif }}
-                                            <label class="form-check-label fw-bold" for="{{ form.actif.id_for_label }}">
-                                                {{ form.actif.label }}
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section : Caractéristiques techniques -->
-                        <div class="section-card sec-tech">
-                            <div class="section-header">
-                                <i class="bi bi-gear-fill"></i> Caractéristiques techniques
-                            </div>
-                            <div class="section-body">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-upc-scan me-1 text-muted"></i>{{ form.numero_chassis.label }}
-                                        </label>
-                                        {{ form.numero_chassis }}
-                                        {% if form.numero_chassis.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.numero_chassis.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-fuel-pump me-1 text-muted"></i>{{ form.type_carburant.label }}
-                                        </label>
-                                        {{ form.type_carburant }}
-                                        {% if form.type_carburant.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.type_carburant.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-calendar-event me-1 text-muted"></i>{{ form.annee_fabrication.label }}
-                                        </label>
-                                        {{ form.annee_fabrication }}
-                                        {% if form.annee_fabrication.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.annee_fabrication.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-gear-wide-connected me-1 text-muted"></i>{{ form.type_boite.label }}
-                                        </label>
-                                        {{ form.type_boite }}
-                                        {% if form.type_boite.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.type_boite.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-calendar-check me-1 text-muted"></i>{{ form.date_mise_circulation.label }}
-                                        </label>
-                                        {{ form.date_mise_circulation }}
-                                        {% if form.date_mise_circulation.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.date_mise_circulation.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section : Documents & conformité -->
-                        <div class="section-card sec-docs">
-                            <div class="section-header">
-                                <i class="bi bi-file-earmark-text"></i> Documents & conformité légale
-                            </div>
-                            <div class="section-body">
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label">
-                                            <i class="bi bi-shield-check me-1 text-muted"></i>{{ form.compagnie_assurance.label }}
-                                        </label>
-                                        {{ form.compagnie_assurance }}
-                                        {% if form.compagnie_assurance.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.compagnie_assurance.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-calendar-x me-1 text-muted"></i>{{ form.date_expiration_assurance.label }}
-                                        </label>
-                                        {{ form.date_expiration_assurance }}
-                                        {% if form.date_expiration_assurance.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.date_expiration_assurance.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-calendar-x me-1 text-muted"></i>{{ form.date_expiration_visite_technique.label }}
-                                        </label>
-                                        {{ form.date_expiration_visite_technique }}
-                                        {% if form.date_expiration_visite_technique.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.date_expiration_visite_technique.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-calendar-x me-1 text-muted"></i>{{ form.date_expiration_carte_grise.label }}
-                                        </label>
-                                        {{ form.date_expiration_carte_grise }}
-                                        {% if form.date_expiration_carte_grise.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.date_expiration_carte_grise.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">
-                                            <i class="bi bi-calendar-x me-1 text-muted"></i>{{ form.date_expiration_licence_transport.label }}
-                                        </label>
-                                        {{ form.date_expiration_licence_transport }}
-                                        {% if form.date_expiration_licence_transport.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.date_expiration_licence_transport.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section : Notes -->
-                        <div class="section-card sec-notes">
-                            <div class="section-header">
-                                <i class="bi bi-pencil-square"></i> Notes & observations
-                            </div>
-                            <div class="section-body">
-                                {{ form.notes }}
-                                {% if form.notes.errors %}
-                                    <div class="invalid-feedback d-block">{{ form.notes.errors }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Bouton submit -->
-                        <div class="d-flex justify-content-end mt-2">
-                            <button type="submit" class="btn btn-primary fw-bold px-4">
-                                <i class="bi bi-check-circle me-1"></i>
-                                {% if form.instance.pk %}Enregistrer les modifications{% else %}Créer le véhicule{% endif %}
-                            </button>
-                        </div>
-                    </form>
+                <div class="veh-meta">
+                    <span class="veh-chip"><i class="bi bi-collection"></i>{{ form.instance.modele.marque }} – {{ form.instance.modele.nom }}</span>
+                    <span class="veh-chip"><i class="bi bi-people"></i>{{ form.instance.modele.capacite }} places</span>
+                    <span class="veh-chip"><i class="bi bi-speedometer2"></i>{{ form.instance.kilometrage_actuel|default:0 }} km</span>
+                    <span class="veh-chip"><i class="bi bi-tools"></i>{{ form.instance.reparations.count }} réparation{{ form.instance.reparations.count|pluralize }}</span>
+                    {% if form.instance.actif %}
+                        <span class="veh-chip actif"><i class="bi bi-check-circle"></i>Actif</span>
+                    {% else %}
+                        <span class="veh-chip inactif"><i class="bi bi-pause-circle"></i>Inactif</span>
+                    {% endif %}
                 </div>
-
-                {% if form.instance.pk %}
-                </div><!-- /tab-pane infos -->
-
-                <!-- Onglet Réparations -->
-                <div class="tab-pane fade" id="reparations" role="tabpanel">
-                    <div class="p-4">
-                        {% include 'vehicules/partials/reparations_historique.html' with vehicule=form.instance %}
-                    </div>
-                </div>
-
-                </div><!-- /tab-content -->
+                {% else %}
+                <div class="veh-header-sub">Remplissez les informations du nouveau véhicule</div>
                 {% endif %}
-
-            </div><!-- /card -->
+            </div>
+            <a href="{% url 'vehicules:vehicule_list' %}" class="btn-back">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
         </div>
-    </div>
+
+        <!-- ══ Barre d'onglets (mode édition uniquement) ══ -->
+        {% if form.instance.pk %}
+        <div class="veh-tabs-bar" id="vehiculeTabs">
+            <button class="veh-tab-btn active" data-target="tab-infos">
+                <i class="bi bi-info-circle"></i> Informations
+            </button>
+            <button class="veh-tab-btn" data-target="tab-reparations">
+                <i class="bi bi-tools"></i> Réparations
+                {% with nb=form.instance.reparations.count %}
+                    {% if nb > 0 %}<span class="tab-badge">{{ nb }}</span>{% endif %}
+                {% endwith %}
+            </button>
+            <button class="veh-tab-btn" data-target="tab-vidanges">
+                <i class="bi bi-droplet-fill"></i> Vidanges
+                {% if km_restants_vidange is not None %}
+                    {% if km_restants_vidange <= 0 %}<span class="tab-badge">Dépassée</span>
+                    {% elif km_restants_vidange <= 500 %}<span class="tab-badge warn">Bientôt</span>
+                    {% endif %}
+                {% endif %}
+            </button>
+        </div>
+        {% endif %}
+
+        <!-- ══ Onglet : Informations / Formulaire ══ -->
+        <div id="tab-infos">
+        <div class="veh-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;color:#dc2626;margin-bottom:20px;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>{{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <!-- ▸ Identification -->
+                <div class="form-section">
+                    <div class="section-label"><i class="bi bi-card-list"></i>Identification</div>
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="field-label">{{ form.modele.label }}<span class="req">*</span></label>
+                            {{ form.modele }}
+                            {% if form.modele.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.modele.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="field-label">{{ form.immatriculation.label }}<span class="req">*</span></label>
+                            {{ form.immatriculation }}
+                            {% if form.immatriculation.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.immatriculation.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="switch-row w-100">
+                                {{ form.actif }}
+                                <label for="{{ form.actif.id_for_label }}">{{ form.actif.label }}</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="section-divider">
+
+                <!-- ▸ Caractéristiques techniques -->
+                <div class="form-section">
+                    <div class="section-label"><i class="bi bi-gear-fill"></i>Caractéristiques techniques</div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="field-label">{{ form.numero_chassis.label }}</label>
+                            {{ form.numero_chassis }}
+                            {% if form.numero_chassis.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.numero_chassis.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="field-label">{{ form.type_carburant.label }}</label>
+                            {{ form.type_carburant }}
+                            {% if form.type_carburant.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.type_carburant.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="field-label">{{ form.type_boite.label }}</label>
+                            {{ form.type_boite }}
+                            {% if form.type_boite.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.type_boite.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="field-label">{{ form.annee_fabrication.label }}</label>
+                            {{ form.annee_fabrication }}
+                            {% if form.annee_fabrication.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.annee_fabrication.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="field-label">{{ form.date_mise_circulation.label }}</label>
+                            {{ form.date_mise_circulation }}
+                            {% if form.date_mise_circulation.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.date_mise_circulation.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="field-label">{{ form.kilometrage_actuel.label }}</label>
+                            {{ form.kilometrage_actuel }}
+                            {% if form.kilometrage_actuel.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.kilometrage_actuel.errors }}</div>{% endif %}
+                            <div class="field-hint">Mis à jour automatiquement à chaque voyage terminé</div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="section-divider">
+
+                <!-- ▸ Documents & conformité -->
+                <div class="form-section">
+                    <div class="section-label"><i class="bi bi-file-earmark-check"></i>Documents &amp; conformité légale</div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="field-label">{{ form.compagnie_assurance.label }}</label>
+                            {{ form.compagnie_assurance }}
+                            {% if form.compagnie_assurance.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.compagnie_assurance.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="field-label">{{ form.date_expiration_assurance.label }}</label>
+                            {{ form.date_expiration_assurance }}
+                            {% if form.date_expiration_assurance.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.date_expiration_assurance.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="field-label">{{ form.date_expiration_visite_technique.label }}</label>
+                            {{ form.date_expiration_visite_technique }}
+                            {% if form.date_expiration_visite_technique.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.date_expiration_visite_technique.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="field-label">{{ form.date_expiration_carte_grise.label }}</label>
+                            {{ form.date_expiration_carte_grise }}
+                            {% if form.date_expiration_carte_grise.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.date_expiration_carte_grise.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="field-label">{{ form.date_expiration_licence_transport.label }}</label>
+                            {{ form.date_expiration_licence_transport }}
+                            {% if form.date_expiration_licence_transport.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.date_expiration_licence_transport.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="section-divider">
+
+                <!-- ▸ Notes -->
+                <div class="form-section">
+                    <div class="section-label"><i class="bi bi-pencil-square"></i>Notes &amp; observations</div>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.notes.errors }}</div>{% endif %}
+                </div>
+
+                <!-- Footer -->
+                <div class="form-footer">
+                    <a href="{% url 'vehicules:vehicule_list' %}" class="btn-cancel">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </a>
+                    <button type="submit" class="btn-submit">
+                        <i class="bi bi-check-circle-fill"></i>
+                        {% if form.instance.pk %}Enregistrer les modifications{% else %}Créer le véhicule{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+        </div>
+
+        <!-- ══ Onglet : Réparations ══ -->
+        {% if form.instance.pk %}
+        <div id="tab-reparations" style="display:none;">
+            <div class="tab-pane-content">
+                {% include 'vehicules/partials/reparations_historique.html' with vehicule=form.instance %}
+            </div>
+        </div>
+
+        <!-- ══ Onglet : Vidanges ══ -->
+        <div id="tab-vidanges" style="display:none;">
+            {% include 'vehicules/partials/vidanges_historique.html' %}
+        </div>
+        {% endif %}
+
+    </div><!-- /wrapper -->
 </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const tabs = document.querySelectorAll('.veh-tab-btn');
+    if (!tabs.length) return;
+
+    tabs.forEach(btn => {
+        btn.addEventListener('click', function () {
+            // Désactiver tous les onglets
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#tab-infos, #tab-reparations, #tab-vidanges')
+                    .forEach(p => p.style.display = 'none');
+
+            // Activer celui cliqué
+            this.classList.add('active');
+            document.getElementById(this.dataset.target).style.display = 'block';
+        });
+    });
+})();
+</script>
 {% endblock %}
