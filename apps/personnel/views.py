@@ -70,10 +70,16 @@ class UtilisateurUpdateView(AdminRequiredMixin, UpdateView):
 
 
 class UtilisateurDeleteView(AdminRequiredMixin, DeleteView):
-    """Supprimer un utilisateur."""
+    """Supprimer un utilisateur — réservé au super_admin uniquement."""
     model = Utilisateur
     template_name = 'personnel/utilisateur_confirm_delete.html'
     success_url = reverse_lazy('personnel:utilisateur_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not (request.user.is_superuser or request.user.role == 'super_admin'):
+            messages.error(request, "Seul le super administrateur peut supprimer un utilisateur.")
+            return redirect('personnel:utilisateur_list')
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         messages.success(self.request, 'Utilisateur supprimé avec succès.')

@@ -244,10 +244,12 @@
                   <i class="bi bi-grid-fill"></i>
                 </a>
                 {% endif %}
+                {% if request.user.is_superuser or request.user.role == 'super_admin' %}
                 <a href="{% url 'personnel:utilisateur_delete' user.pk %}"
                    class="btn-action del" title="Supprimer">
                   <i class="bi bi-trash"></i>
                 </a>
+                {% endif %}
               </div>
             </td>
           </tr>
