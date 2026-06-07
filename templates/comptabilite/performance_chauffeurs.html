@@ -25,18 +25,31 @@
 
   /* ── KPI ─────────────────────────────────────────────── */
   .kpi-card {
-    border: none; border-radius: 12px; padding: 20px 22px; color: #fff;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.12); transition: transform 0.2s;
-    position: relative; overflow: hidden;
+    background: #fff; border: none; border-radius: 13px;
+    border-top: 4px solid #e5e7eb; padding: 20px 22px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%; display: flex; align-items: center; gap: 16px;
   }
-  .kpi-card:hover { transform: translateY(-2px); }
-  .kpi-card .kpi-icon { font-size: 2.2rem; opacity: 0.18; position: absolute; right: 16px; top: 14px; }
-  .kpi-card .kpi-val  { font-size: 2rem; font-weight: 700; line-height: 1.2; }
-  .kpi-card .kpi-lbl  { font-size: 12px; opacity: 0.88; margin-top: 4px; }
-  .kpi-blue   { background: linear-gradient(135deg, #2d4a7a, #4A6FA5); }
-  .kpi-green  { background: linear-gradient(135deg, #065f46, #059669); }
-  .kpi-orange { background: linear-gradient(135deg, #92400e, #d97706); }
-  .kpi-purple { background: linear-gradient(135deg, #5b21b6, #7c3aed); }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.11); }
+  .kpi-card .kpi-ico {
+    width: 52px; height: 52px; border-radius: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+  }
+  .kpi-card .kpi-val { font-size: 1.7rem; font-weight: 700; line-height: 1.2; }
+  .kpi-card .kpi-lbl { font-size: 12px; color: #6b7280; margin-top: 4px; }
+  .kpi-blue   { border-top-color: #1e3260; }
+  .kpi-blue   .kpi-ico { background: #eef1f8; color: #1e3260; }
+  .kpi-blue   .kpi-val { color: #1e3260; }
+  .kpi-green  { border-top-color: #27ae60; }
+  .kpi-green  .kpi-ico { background: #f0fdf4; color: #27ae60; }
+  .kpi-green  .kpi-val { color: #27ae60; }
+  .kpi-orange { border-top-color: #E67E22; }
+  .kpi-orange .kpi-ico { background: #fff7ed; color: #E67E22; }
+  .kpi-orange .kpi-val { color: #E67E22; }
+  .kpi-purple { border-top-color: #4338ca; }
+  .kpi-purple .kpi-ico { background: #eef2ff; color: #4338ca; }
+  .kpi-purple .kpi-val { color: #4338ca; }
 
   /* ── Filtre ──────────────────────────────────────────── */
   .filter-zone {
@@ -74,7 +87,7 @@
   .progress-bar-custom {
     height: 8px; border-radius: 4px; background: #e5e7eb; overflow: hidden;
   }
-  .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #4A6FA5, #059669); }
+  .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #1e3260, #059669); }
 
   .zero-badge { background: #fee2e2; color: #991b1b; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
 
@@ -120,38 +133,46 @@
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-blue">
-        <i class="bi bi-bus-front kpi-icon"></i>
-        <div class="kpi-val">{{ total_voyages }}</div>
-        <div class="kpi-lbl"><i class="bi bi-collection me-1"></i>Total voyages (période)</div>
+        <div class="kpi-ico"><i class="bi bi-bus-front"></i></div>
+        <div>
+          <div class="kpi-val">{{ total_voyages }}</div>
+          <div class="kpi-lbl"><i class="bi bi-collection me-1"></i>Total voyages (période)</div>
+        </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-green">
-        <i class="bi bi-people kpi-icon"></i>
-        <div class="kpi-val">{{ nb_chauffeurs }}</div>
-        <div class="kpi-lbl"><i class="bi bi-person-check me-1"></i>Chauffeurs actifs</div>
+        <div class="kpi-ico"><i class="bi bi-people"></i></div>
+        <div>
+          <div class="kpi-val">{{ nb_chauffeurs }}</div>
+          <div class="kpi-lbl"><i class="bi bi-person-check me-1"></i>Chauffeurs actifs</div>
+        </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-orange">
-        <i class="bi bi-bar-chart kpi-icon"></i>
-        <div class="kpi-val">{{ nb_avec_voyage }}</div>
-        <div class="kpi-lbl"><i class="bi bi-activity me-1"></i>Avec voyages sur la période</div>
+        <div class="kpi-ico"><i class="bi bi-bar-chart"></i></div>
+        <div>
+          <div class="kpi-val">{{ nb_avec_voyage }}</div>
+          <div class="kpi-lbl"><i class="bi bi-activity me-1"></i>Avec voyages sur la période</div>
+        </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-purple">
-        <i class="bi bi-trophy kpi-icon"></i>
-        <div class="kpi-val">
-          {% if meilleur and meilleur.nb_voyages > 0 %}{{ meilleur.nb_voyages }}{% else %}—{% endif %}
-        </div>
-        <div class="kpi-lbl">
-          <i class="bi bi-star me-1"></i>
-          {% if meilleur and meilleur.nb_voyages > 0 %}
-            Record : {{ meilleur.nom_complet|truncatechars:20 }}
-          {% else %}
-            Meilleur chauffeur
-          {% endif %}
+        <div class="kpi-ico"><i class="bi bi-trophy"></i></div>
+        <div>
+          <div class="kpi-val">
+            {% if meilleur and meilleur.nb_voyages > 0 %}{{ meilleur.nb_voyages }}{% else %}—{% endif %}
+          </div>
+          <div class="kpi-lbl">
+            <i class="bi bi-star me-1"></i>
+            {% if meilleur and meilleur.nb_voyages > 0 %}
+              Record : {{ meilleur.nom_complet|truncatechars:20 }}
+            {% else %}
+              Meilleur chauffeur
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>

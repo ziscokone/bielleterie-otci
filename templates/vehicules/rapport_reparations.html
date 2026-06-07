@@ -25,29 +25,31 @@
 
   /* ── Cards stats ─────────────────────────────────────── */
   .kpi-card {
-    border: none;
-    border-radius: 12px;
-    padding: 20px 22px;
-    color: #fff;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
-    transition: transform 0.2s;
+    background: #fff; border: none; border-radius: 13px;
+    border-top: 4px solid #e5e7eb; padding: 20px 22px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%; display: flex; align-items: center; gap: 16px;
   }
-  .kpi-card:hover { transform: translateY(-2px); }
-  .kpi-card .kpi-icon {
-    font-size: 2.2rem;
-    opacity: 0.22;
-    position: absolute;
-    right: 16px;
-    top: 14px;
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.11); }
+  .kpi-card .kpi-ico {
+    width: 52px; height: 52px; border-radius: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
   }
   .kpi-card .kpi-value { font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
-  .kpi-card .kpi-label { font-size: 12px; opacity: 0.88; margin-top: 4px; }
-  .kpi-blue   { background: linear-gradient(135deg, #2d4a7a, #4A6FA5); }
-  .kpi-orange { background: linear-gradient(135deg, #b45309, #d97706); }
-  .kpi-green  { background: linear-gradient(135deg, #065f46, #059669); }
-  .kpi-purple { background: linear-gradient(135deg, #5b21b6, #7c3aed); }
+  .kpi-card .kpi-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
+  .kpi-blue   { border-top-color: #1e3260; }
+  .kpi-blue   .kpi-ico { background: #eef1f8; color: #1e3260; }
+  .kpi-blue   .kpi-value { color: #1e3260; }
+  .kpi-orange { border-top-color: #E67E22; }
+  .kpi-orange .kpi-ico { background: #fff7ed; color: #E67E22; }
+  .kpi-orange .kpi-value { color: #E67E22; }
+  .kpi-green  { border-top-color: #27ae60; }
+  .kpi-green  .kpi-ico { background: #f0fdf4; color: #27ae60; }
+  .kpi-green  .kpi-value { color: #27ae60; }
+  .kpi-purple { border-top-color: #4338ca; }
+  .kpi-purple .kpi-ico { background: #eef2ff; color: #4338ca; }
+  .kpi-purple .kpi-value { color: #4338ca; }
 
   /* ── Section cards ───────────────────────────────────── */
   .section-card {
@@ -105,7 +107,7 @@
   }
   .heatmap-table th.th-total { background: #1a2e4a; }
   .heatmap-table td.td-vehicle {
-    background: #4A6FA5;
+    background: #1e3260;
     color: #fff;
     font-weight: 600;
     font-size: 12px;
@@ -267,30 +269,38 @@
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-blue">
-        <i class="bi bi-cash-stack kpi-icon"></i>
-        <div class="kpi-value">{{ cout_total|floatformat:0|intcomma }}<small style="font-size:13px"> F</small></div>
-        <div class="kpi-label"><i class="bi bi-currency-exchange me-1"></i>Coût total réparations</div>
+        <div class="kpi-ico"><i class="bi bi-cash-stack"></i></div>
+        <div>
+          <div class="kpi-value">{{ cout_total|floatformat:0|intcomma }}<small style="font-size:13px"> F</small></div>
+          <div class="kpi-label"><i class="bi bi-currency-exchange me-1"></i>Coût total réparations</div>
+        </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-orange">
-        <i class="bi bi-wrench kpi-icon"></i>
-        <div class="kpi-value">{{ nb_reparations }}</div>
-        <div class="kpi-label"><i class="bi bi-tools me-1"></i>Nombre de réparations</div>
+        <div class="kpi-ico"><i class="bi bi-wrench"></i></div>
+        <div>
+          <div class="kpi-value">{{ nb_reparations }}</div>
+          <div class="kpi-label"><i class="bi bi-tools me-1"></i>Nombre de réparations</div>
+        </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-green">
-        <i class="bi bi-truck kpi-icon"></i>
-        <div class="kpi-value">{{ nb_vehicules }}</div>
-        <div class="kpi-label"><i class="bi bi-bus-front me-1"></i>Véhicules concernés</div>
+        <div class="kpi-ico"><i class="bi bi-truck"></i></div>
+        <div>
+          <div class="kpi-value">{{ nb_vehicules }}</div>
+          <div class="kpi-label"><i class="bi bi-bus-front me-1"></i>Véhicules concernés</div>
+        </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-purple">
-        <i class="bi bi-graph-up kpi-icon"></i>
-        <div class="kpi-value">{{ cout_moyen_vehicule|floatformat:0|intcomma }}<small style="font-size:13px"> F</small></div>
-        <div class="kpi-label"><i class="bi bi-calculator me-1"></i>Coût moyen / véhicule</div>
+        <div class="kpi-ico"><i class="bi bi-graph-up"></i></div>
+        <div>
+          <div class="kpi-value">{{ cout_moyen_vehicule|floatformat:0|intcomma }}<small style="font-size:13px"> F</small></div>
+          <div class="kpi-label"><i class="bi bi-calculator me-1"></i>Coût moyen / véhicule</div>
+        </div>
       </div>
     </div>
   </div>
@@ -414,7 +424,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   var COULEURS = [
-    '#4A6FA5','#059669','#d97706','#7c3aed','#dc3545',
+    '#1e3260','#059669','#d97706','#7c3aed','#dc3545',
     '#0891b2','#db2777','#65a30d','#ea580c','#6366f1',
     '#0f766e','#b45309','#9333ea','#16a34a','#e11d48'
   ];

@@ -11,7 +11,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
-from core.mixins import AdminRequiredMixin
+from core.mixins import AdminRequiredMixin, GestionRequiredMixin
 
 logger = logging.getLogger(__name__)
 from .models import ModeleVehicule, Vehicule, ReparationVehicule, TypeReparation
@@ -237,7 +237,7 @@ class ReparationVehiculeListView(LoginRequiredMixin, ListView):
         return context
 
 
-class ReparationVehiculeCreateView(AdminRequiredMixin, CreateView):
+class ReparationVehiculeCreateView(GestionRequiredMixin, CreateView):
     """Créer une nouvelle réparation."""
     model = ReparationVehicule
     form_class = ReparationVehiculeForm
@@ -272,7 +272,7 @@ class ReparationVehiculeDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'reparation'
 
 
-class ReparationVehiculeUpdateView(AdminRequiredMixin, UpdateView):
+class ReparationVehiculeUpdateView(GestionRequiredMixin, UpdateView):
     """Modifier une réparation."""
     model = ReparationVehicule
     form_class = ReparationVehiculeForm
@@ -298,29 +298,41 @@ class ReparationVehiculeUpdateView(AdminRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class ReparationVehiculeTerminerView(AdminRequiredMixin, View):
-    """Passe une réparation au statut 'terminée' en un clic."""
+class ReparationVehiculeDemarrerView(GestionRequiredMixin, View):
+    """Passe une réparation de 'en_attente' à 'en_cours'."""
 
     def post(self, request, pk):
         reparation = get_object_or_404(ReparationVehicule, pk=pk)
-        if reparation.statut != 'terminee':
+        if reparation.statut == 'en_attente':
+            reparation.statut = 'en_cours'
+            reparation.save(update_fields=['statut', 'date_modification'])
+            messages.success(request, 'La réparation est maintenant en cours.')
+        return redirect('vehicules:reparation_list')
+
+
+class ReparationVehiculeTerminerView(GestionRequiredMixin, View):
+    """Passe une réparation de 'en_cours' à 'terminée'."""
+
+    def post(self, request, pk):
+        reparation = get_object_or_404(ReparationVehicule, pk=pk)
+        if reparation.statut == 'en_cours':
             reparation.statut = 'terminee'
             reparation.save(update_fields=['statut', 'date_modification'])
-            messages.success(request, f'La réparation a été marquée comme terminée.')
-        return redirect('vehicules:reparation_detail', pk=pk)
+            messages.success(request, 'La réparation a été marquée comme terminée.')
+        return redirect('vehicules:reparation_list')
 
 
-class ReparationVehiculeDeleteView(AdminRequiredMixin, DeleteView):
-    """Supprimer une réparation."""
+class ReparationVehiculeDeleteView(GestionRequiredMixin, DeleteView):
+    """Supprimer une réparation — uniquement si statut 'en_attente'."""
     model = ReparationVehicule
     template_name = 'vehicules/reparation_confirm_delete.html'
     success_url = reverse_lazy('vehicules:reparation_list')
 
     def dispatch(self, request, *args, **kwargs):
         reparation = get_object_or_404(ReparationVehicule, pk=kwargs['pk'])
-        if reparation.statut == 'terminee':
-            messages.error(request, "Cette réparation est terminée et ne peut pas être supprimée.")
-            return redirect('vehicules:reparation_detail', pk=reparation.pk)
+        if reparation.statut != 'en_attente':
+            messages.error(request, "Seules les réparations en attente peuvent être supprimées.")
+            return redirect('vehicules:reparation_list')
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -329,7 +341,7 @@ class ReparationVehiculeDeleteView(AdminRequiredMixin, DeleteView):
 
 
 # Vue pour le rapport analytique
-class RapportReparationsView(AdminRequiredMixin, TemplateView):
+class RapportReparationsView(GestionRequiredMixin, TemplateView):
     """Rapport analytique des réparations véhicules."""
     template_name = 'vehicules/rapport_reparations.html'
 

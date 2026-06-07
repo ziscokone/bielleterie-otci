@@ -52,36 +52,48 @@
 
   /* ── KPI cards ───────────────────────────────────────── */
   .kpi-card {
+    background: #fff;
     border: none;
     border-radius: 13px;
-    padding: 22px 22px;
-    color: #fff;
+    border-top: 4px solid #e5e7eb;
+    padding: 20px 22px;
     position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
     transition: transform 0.2s, box-shadow 0.2s;
     height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 16px;
   }
   .kpi-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   }
-  .kpi-card .bg-icon {
-    font-size: 5rem;
-    opacity: 0.12;
-    position: absolute;
-    right: 10px;
-    bottom: -10px;
-    line-height: 1;
+  .kpi-card .kpi-ico {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
   }
-  .kpi-card .kpi-val  { font-size: 2.2rem; font-weight: 700; line-height: 1.1; }
-  .kpi-card .kpi-lbl  { font-size: 12px; opacity: 0.85; margin-top: 6px; font-weight: 500; }
-  .kpi-card .kpi-icon { font-size: 1.4rem; margin-bottom: 10px; opacity: 0.9; }
+  .kpi-card .kpi-val  { font-size: 2rem; font-weight: 700; line-height: 1.1; color: #111827; }
+  .kpi-card .kpi-lbl  { font-size: 12px; color: #6b7280; margin-top: 4px; font-weight: 500; }
 
-  .kpi-blue   { background: linear-gradient(135deg, #1e3260, #4A6FA5); }
-  .kpi-green  { background: linear-gradient(135deg, #065f46, #059669); }
-  .kpi-orange { background: linear-gradient(135deg, #92400e, #d97706); }
-  .kpi-purple { background: linear-gradient(135deg, #4c1d95, #7c3aed); }
+  .kpi-blue   { border-top-color: #1e3260; }
+  .kpi-blue   .kpi-ico { background: #eef1f8; color: #1e3260; }
+  .kpi-blue   .kpi-val { color: #1e3260; }
+
+  .kpi-green  { border-top-color: #27ae60; }
+  .kpi-green  .kpi-ico { background: #f0fdf4; color: #27ae60; }
+  .kpi-green  .kpi-val { color: #27ae60; }
+
+  .kpi-orange { border-top-color: #E67E22; }
+  .kpi-orange .kpi-ico { background: #fff7ed; color: #E67E22; }
+  .kpi-orange .kpi-val { color: #E67E22; }
+
+  .kpi-indigo { border-top-color: #4338ca; }
+  .kpi-indigo .kpi-ico { background: #eef2ff; color: #4338ca; }
+  .kpi-indigo .kpi-val { color: #4338ca; }
 
   /* ── Section card ────────────────────────────────────── */
   .dash-card {
@@ -225,34 +237,38 @@
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-blue">
-        <i class="bi bi-bus-front kpi-icon"></i>
-        <div class="kpi-val">{{ voyages_today }}</div>
-        <div class="kpi-lbl">Voyages aujourd'hui</div>
-        <i class="bi bi-bus-front bg-icon"></i>
+        <div class="kpi-ico"><i class="bi bi-bus-front"></i></div>
+        <div>
+          <div class="kpi-val">{{ voyages_today }}</div>
+          <div class="kpi-lbl">Voyages aujourd'hui</div>
+        </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-green">
-        <i class="bi bi-ticket-perforated kpi-icon"></i>
-        <div class="kpi-val">{{ billets_vendus_today }}</div>
-        <div class="kpi-lbl">Billets vendus aujourd'hui</div>
-        <i class="bi bi-ticket-perforated bg-icon"></i>
+        <div class="kpi-ico"><i class="bi bi-ticket-perforated"></i></div>
+        <div>
+          <div class="kpi-val">{{ billets_vendus_today }}</div>
+          <div class="kpi-lbl">Billets vendus aujourd'hui</div>
+        </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-orange">
-        <i class="bi bi-cash-stack kpi-icon"></i>
-        <div class="kpi-val" style="font-size:1.5rem">{{ montant_today|format_montant }}<small style="font-size:13px"> F</small></div>
-        <div class="kpi-lbl">Montant encaissé aujourd'hui</div>
-        <i class="bi bi-cash-stack bg-icon"></i>
+        <div class="kpi-ico"><i class="bi bi-cash-stack"></i></div>
+        <div>
+          <div class="kpi-val" style="font-size:1.5rem">{{ montant_today|format_montant }}<small style="font-size:12px;font-weight:500;color:#9ca3af"> F</small></div>
+          <div class="kpi-lbl">Montant encaissé aujourd'hui</div>
+        </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="kpi-card kpi-purple">
-        <i class="bi bi-bookmark kpi-icon"></i>
-        <div class="kpi-val">{{ reservations_en_attente }}</div>
-        <div class="kpi-lbl">Réservations en attente</div>
-        <i class="bi bi-bookmark bg-icon"></i>
+      <div class="kpi-card kpi-indigo">
+        <div class="kpi-ico"><i class="bi bi-bookmark"></i></div>
+        <div>
+          <div class="kpi-val">{{ reservations_en_attente }}</div>
+          <div class="kpi-lbl">Réservations en attente</div>
+        </div>
       </div>
     </div>
   </div>

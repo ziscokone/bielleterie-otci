@@ -91,13 +91,6 @@
                             </a>
                         </li>
                         {% endif %}
-                        {% if user.has_global_access %}
-                        <li>
-                            <a class="dropdown-item" href="{% url 'comptabilite:statistiques' %}">
-                                <i class="bi bi-graph-up-arrow me-2"></i> Statistiques
-                            </a>
-                        </li>
-                        {% endif %}
                         <li><hr class="dropdown-divider"></li>
                         <li><h6 class="dropdown-header">Opérations</h6></li>
                         <li>
@@ -203,13 +196,13 @@
                         <i class="bi bi-tags me-1"></i> Types de réparation
                     </a>
                 </li>
-                {% if user.role in 'pdg,super_admin,manager' %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'rapport_reparations' %}active{% endif %}"
                        href="{% url 'vehicules:rapport_reparations' %}">
                         <i class="bi bi-file-earmark-bar-graph me-1"></i> Rapport
                     </a>
                 </li>
+                {% if user.has_global_access %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'rentabilite' %}active{% endif %}"
                        href="{% url 'vehicules:rentabilite' %}">

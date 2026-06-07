@@ -10,8 +10,8 @@
     --color-bg-card: #FFFFFF;
     --color-text-primary: #343A40;
     --color-text-secondary: #6C757D;
-    --color-accent: #4A6FA5;
-    --color-accent-hover: #3D5D8A;
+    --color-accent: #1e3260;
+    --color-accent-hover: #162550;
 
     /* Couleurs de statut */
     --color-success: #5D8A66;
@@ -302,7 +302,7 @@ a:hover {
 .form-control:focus,
 .form-select:focus {
     border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.15);
+    box-shadow: 0 0 0 3px rgba(30, 50, 96, 0.15);
 }
 
 .form-label {
@@ -337,7 +337,7 @@ a:hover {
 }
 
 .table tbody tr:hover {
-    background-color: rgba(74, 111, 165, 0.03);
+    background-color: rgba(30, 50, 96, 0.03);
 }
 
 /* ==========================================================================
@@ -837,7 +837,7 @@ a:hover {
 }
 
 .bg-accent-light {
-    background-color: rgba(74, 111, 165, 0.1);
+    background-color: rgba(30, 50, 96, 0.1);
 }
 
 .border-accent {

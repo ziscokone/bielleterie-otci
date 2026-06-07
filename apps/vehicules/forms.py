@@ -1,5 +1,6 @@
 from django import forms
 from .models import ModeleVehicule, Vehicule, ReparationVehicule, TypeReparation
+from datetime import date
 import json
 
 
@@ -181,7 +182,7 @@ class ReparationVehiculeForm(forms.ModelForm):
         fields = [
             'vehicule', 'date_reparation', 'type_reparation', 'description',
             'garage_prestataire', 'montant', 'kilometrage', 'pieces_remplacees',
-            'statut', 'huile_utilisee', 'intervalle_vidange',
+            'huile_utilisee', 'intervalle_vidange',
         ]
         widgets = {
             'vehicule': forms.Select(attrs={
@@ -220,9 +221,6 @@ class ReparationVehiculeForm(forms.ModelForm):
                 'rows': 2,
                 'placeholder': 'Ex: Embrayage, Disques de frein avant...'
             }),
-            'statut': forms.Select(attrs={
-                'class': 'form-select',
-            }),
             'huile_utilisee': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Ex: Total Rubia 15W40'
@@ -240,7 +238,6 @@ class ReparationVehiculeForm(forms.ModelForm):
             'montant': 'Montant (FCFA)',
             'kilometrage': 'Kilométrage au moment de la vidange',
             'pieces_remplacees': 'Pièces remplacées (optionnel)',
-            'statut': 'Statut',
             'huile_utilisee': 'Huile utilisée',
             'intervalle_vidange': 'Intervalle (prochaine vidange)',
         }
@@ -252,6 +249,12 @@ class ReparationVehiculeForm(forms.ModelForm):
         self.vidange_type_ids = list(
             TypeReparation.objects.filter(actif=True, is_vidange=True).values_list('id', flat=True)
         )
+
+    def clean_date_reparation(self):
+        date_rep = self.cleaned_data.get('date_reparation')
+        if date_rep and date_rep > date.today():
+            raise forms.ValidationError("La date de réparation ne peut pas être dans le futur.")
+        return date_rep
 
     def clean(self):
         cleaned_data = super().clean()

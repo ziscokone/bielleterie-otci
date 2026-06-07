@@ -21,6 +21,7 @@ urlpatterns = [
     path('reparations/ajouter/', views.ReparationVehiculeCreateView.as_view(), name='reparation_create'),
     path('reparations/<int:pk>/', views.ReparationVehiculeDetailView.as_view(), name='reparation_detail'),
     path('reparations/<int:pk>/modifier/', views.ReparationVehiculeUpdateView.as_view(), name='reparation_update'),
+    path('reparations/<int:pk>/demarrer/', views.ReparationVehiculeDemarrerView.as_view(), name='reparation_demarrer'),
     path('reparations/<int:pk>/terminer/', views.ReparationVehiculeTerminerView.as_view(), name='reparation_terminer'),
     path('reparations/<int:pk>/supprimer/', views.ReparationVehiculeDeleteView.as_view(), name='reparation_delete'),
 

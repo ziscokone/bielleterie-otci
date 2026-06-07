@@ -1,13 +1,11 @@
 from django.urls import path
-from django.views.generic import RedirectView
 from django.contrib.auth import views as auth_views
 from . import views
 
 app_name = 'personnel'
 
 urlpatterns = [
-    # Redirection login vers two_factor (rétrocompatibilité des liens existants)
-    path('login/', RedirectView.as_view(pattern_name='two_factor:login', permanent=False), name='login'),
+    path('login/', auth_views.LoginView.as_view(template_name='personnel/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
     # Utilisateurs
@@ -15,7 +13,6 @@ urlpatterns = [
     path('utilisateurs/ajouter/', views.UtilisateurCreateView.as_view(), name='utilisateur_create'),
     path('utilisateurs/<int:pk>/modifier/', views.UtilisateurUpdateView.as_view(), name='utilisateur_update'),
     path('utilisateurs/<int:pk>/supprimer/', views.UtilisateurDeleteView.as_view(), name='utilisateur_delete'),
-    path('utilisateurs/<int:pk>/reset-2fa/', views.Reset2FAView.as_view(), name='reset_2fa'),
     path('utilisateurs/<int:pk>/modules/', views.ModulesUtilisateurView.as_view(), name='utilisateur_modules'),
 
     # Chauffeurs

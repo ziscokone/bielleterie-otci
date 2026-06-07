@@ -164,10 +164,14 @@
     background: #fff; color: #6b7280;
     transition: all 0.15s; text-decoration: none;
 }
-.btn-action:hover        { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-.btn-action.view:hover   { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
-.btn-action.edit:hover   { background: #fefce8; color: #92400e; border-color: #fde68a; }
-.btn-action.del:hover    { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.btn-action:hover         { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.btn-action.view:hover    { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.btn-action.edit:hover    { background: #fefce8; color: #92400e; border-color: #fde68a; }
+.btn-action.del:hover     { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.btn-action.start         { color: #27ae60; border-color: #bbf7d0; background: #f0fdf4; }
+.btn-action.start:hover   { background: #dcfce7; color: #166534; border-color: #86efac; box-shadow: 0 2px 6px rgba(39,174,96,0.2); }
+.btn-action.finish        { color: #1e3260; border-color: #c7d2fe; background: #eef1f8; }
+.btn-action.finish:hover  { background: #dbeafe; color: #1e40af; border-color: #93c5fd; box-shadow: 0 2px 6px rgba(30,50,96,0.2); }
 
 /* ── Pagination ─────────────────────────────────────────── */
 .pagination-zone {
@@ -371,15 +375,28 @@ Macro pour générer les paramètres de pagination en conservant les filtres.
                                    class="btn-action view" title="Voir">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                {% if rep.statut != 'terminee' %}
+                                {% if rep.statut == 'en_attente' %}
                                 <a href="{% url 'vehicules:reparation_update' rep.pk %}"
                                    class="btn-action edit" title="Modifier">
                                     <i class="bi bi-pencil"></i>
                                 </a>
+                                <form method="post" action="{% url 'vehicules:reparation_demarrer' rep.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-action start" title="Démarrer la réparation">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                </form>
                                 <a href="{% url 'vehicules:reparation_delete' rep.pk %}"
                                    class="btn-action del" title="Supprimer">
                                     <i class="bi bi-trash"></i>
                                 </a>
+                                {% elif rep.statut == 'en_cours' %}
+                                <form method="post" action="{% url 'vehicules:reparation_terminer' rep.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-action finish" title="Marquer comme terminée">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                </form>
                                 {% endif %}
                             </div>
                         </td>

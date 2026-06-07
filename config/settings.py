@@ -31,10 +31,6 @@ INSTALLED_APPS = [
 
     # Sécurité
     'axes',
-    'django_otp',
-    'django_otp.plugins.otp_totp',
-    'django_otp.plugins.otp_static',
-    'two_factor',
     'auditlog',
 
     # Local apps
@@ -60,12 +56,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'axes.middleware.AxesMiddleware',
     'auditlog.middleware.AuditlogMiddleware',
-    'core.middleware.Force2FAMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -145,10 +139,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Login/Logout URLs
-LOGIN_URL = 'two_factor:login'
+LOGIN_URL = 'personnel:login'
 LOGIN_REDIRECT_URL = 'hub'
-LOGOUT_REDIRECT_URL = 'two_factor:login'
-TWO_FACTOR_LOGIN_URL = 'two_factor:login'
+LOGOUT_REDIRECT_URL = 'personnel:login'
 
 # ─── Django Axes (protection brute force) ────────────────────────────────────
 AXES_FAILURE_LIMIT = 5           # Bloquer après 5 tentatives échouées
@@ -191,10 +184,6 @@ if not DEBUG:
     CSRF_COOKIE_HTTPONLY = True
 
 X_FRAME_OPTIONS = 'DENY'
-
-# ─── Rôles qui doivent utiliser la 2FA ──────────────────────────────────────
-ROLES_2FA_OBLIGATOIRE = ['super_admin', 'manager', 'chef_gare']
-
 
 # ─── Jazzmin (Admin UI) ──────────────────────────────────────────────────────
 JAZZMIN_SETTINGS = {
@@ -265,10 +254,6 @@ JAZZMIN_SETTINGS = {
         "comptabilite",
         "axes",
         "auditlog",
-        "django_otp",
-        "otp_totp",
-        "otp_static",
-        "two_factor",
         "django_celery_beat",
     ],
 

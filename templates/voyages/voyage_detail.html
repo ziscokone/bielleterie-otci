@@ -61,33 +61,45 @@
   .btn-act-secondary {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 14px; border-radius: 9px; font-size: 12px; font-weight: 600;
-    border: 1px solid #e5e7eb; background: #fff; color: #374151;
+    border: 1px solid #cbd5e1; background: #f1f5f9; color: #475569;
     cursor: pointer; transition: all 0.15s; text-decoration: none;
   }
-  .btn-act-secondary:hover { background: #f3f4f6; color: #111827; border-color: #d1d5db; }
+  .btn-act-secondary:hover { background: #e2e8f0; color: #1e293b; border-color: #94a3b8; }
   .btn-act-retour {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 14px; border-radius: 9px; font-size: 12px; font-weight: 600;
-    background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+    background: #dc3545; color: #fff; border: none;
     text-decoration: none; transition: all 0.15s; margin-left: auto;
   }
-  .btn-act-retour:hover { background: #e2e8f0; color: #1e293b; }
+  .btn-act-retour:hover { background: #bb2d3b; color: #fff; box-shadow: 0 4px 10px rgba(220,53,69,0.35); }
 
   /* ── KPI cards ───────────────────────────────────────── */
   .kpi-card {
-    border: none; border-radius: 12px; padding: 18px 20px;
-    color: #fff; position: relative; overflow: hidden;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.1); transition: transform 0.2s;
+    background: #fff; border: none; border-radius: 13px;
+    border-top: 4px solid #e5e7eb; padding: 20px 22px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%; display: flex; align-items: center; gap: 16px;
   }
-  .kpi-card:hover { transform: translateY(-2px); }
-  .kpi-card .bg-icon { font-size: 4rem; opacity: 0.13; position: absolute; right: 8px; bottom: -8px; line-height: 1; }
-  .kpi-card .kpi-val { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
-  .kpi-card .kpi-lbl { font-size: 11px; opacity: 0.85; margin-top: 5px; font-weight: 500; }
-  .kpi-card .kpi-icon { font-size: 1.2rem; margin-bottom: 8px; opacity: 0.9; }
-  .kpi-green  { background: linear-gradient(135deg, #065f46, #059669); }
-  .kpi-yellow { background: linear-gradient(135deg, #78350f, #d97706); }
-  .kpi-blue   { background: linear-gradient(135deg, #1e3260, #4A6FA5); }
-  .kpi-purple { background: linear-gradient(135deg, #4c1d95, #7c3aed); }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.11); }
+  .kpi-card .kpi-ico {
+    width: 52px; height: 52px; border-radius: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+  }
+  .kpi-card .kpi-val { font-size: 1.7rem; font-weight: 700; line-height: 1.1; }
+  .kpi-card .kpi-lbl { font-size: 11px; color: #6b7280; margin-top: 4px; font-weight: 500; }
+  .kpi-green  { border-top-color: #27ae60; }
+  .kpi-green  .kpi-ico { background: #f0fdf4; color: #27ae60; }
+  .kpi-green  .kpi-val { color: #27ae60; }
+  .kpi-yellow { border-top-color: #E67E22; }
+  .kpi-yellow .kpi-ico { background: #fff7ed; color: #E67E22; }
+  .kpi-yellow .kpi-val { color: #E67E22; }
+  .kpi-blue   { border-top-color: #1e3260; }
+  .kpi-blue   .kpi-ico { background: #eef1f8; color: #1e3260; }
+  .kpi-blue   .kpi-val { color: #1e3260; }
+  .kpi-purple { border-top-color: #4338ca; }
+  .kpi-purple .kpi-ico { background: #eef2ff; color: #4338ca; }
+  .kpi-purple .kpi-val { color: #4338ca; }
 
   /* ── Table passagers ─────────────────────────────────── */
   .passagers-card {
@@ -244,36 +256,40 @@
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-green">
-        <i class="bi bi-check-circle kpi-icon"></i>
-        <div class="kpi-val">{{ nb_billets_payes }}</div>
-        <div class="kpi-lbl">Billets Payés</div>
-        <i class="bi bi-check-circle bg-icon"></i>
+        <div class="kpi-ico"><i class="bi bi-check-circle"></i></div>
+        <div>
+          <div class="kpi-val">{{ nb_billets_payes }}</div>
+          <div class="kpi-lbl">Billets Payés</div>
+        </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-yellow">
-        <i class="bi bi-bookmark kpi-icon"></i>
-        <div class="kpi-val">{{ nb_billets_reserves }}</div>
-        <div class="kpi-lbl">Réservations</div>
-        <i class="bi bi-bookmark bg-icon"></i>
+        <div class="kpi-ico"><i class="bi bi-bookmark"></i></div>
+        <div>
+          <div class="kpi-val">{{ nb_billets_reserves }}</div>
+          <div class="kpi-lbl">Réservations</div>
+        </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-blue">
-        <i class="bi bi-people kpi-icon"></i>
-        <div class="kpi-val">
-          {{ billets.count }}{% if voyage.vehicule %}<span style="font-size:1rem;opacity:0.7">/{{ voyage.vehicule.modele.capacite }}</span>{% endif %}
+        <div class="kpi-ico"><i class="bi bi-people"></i></div>
+        <div>
+          <div class="kpi-val">
+            {{ billets.count }}{% if voyage.vehicule %}<span style="font-size:1rem;opacity:0.6">/{{ voyage.vehicule.modele.capacite }}</span>{% endif %}
+          </div>
+          <div class="kpi-lbl">Total Passagers</div>
         </div>
-        <div class="kpi-lbl">Total Passagers</div>
-        <i class="bi bi-people bg-icon"></i>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="kpi-card kpi-purple">
-        <i class="bi bi-cash-stack kpi-icon"></i>
-        <div class="kpi-val" style="font-size:1.4rem">{{ montant_total|format_montant }}<small style="font-size:12px"> F</small></div>
-        <div class="kpi-lbl">Recette totale</div>
-        <i class="bi bi-cash-stack bg-icon"></i>
+        <div class="kpi-ico"><i class="bi bi-cash-stack"></i></div>
+        <div>
+          <div class="kpi-val" style="font-size:1.3rem">{{ montant_total|format_montant }}<small style="font-size:12px"> F</small></div>
+          <div class="kpi-lbl">Recette totale</div>
+        </div>
       </div>
     </div>
   </div>
