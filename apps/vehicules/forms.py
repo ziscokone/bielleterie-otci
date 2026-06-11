@@ -203,6 +203,11 @@ class ReparationVehiculeForm(forms.ModelForm):
             'notes': 'Notes générales',
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.fields.pop('statut')
+
     def clean_date_reparation(self):
         date_rep = self.cleaned_data.get('date_reparation')
         if date_rep and date_rep > date.today():

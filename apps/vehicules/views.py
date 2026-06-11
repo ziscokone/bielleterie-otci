@@ -829,6 +829,15 @@ class RentabiliteVehiculeView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
 # ==================== API AJAX ====================
 
 @require_http_methods(["GET"])
+def get_vehicule_km(request, pk):
+    """Retourne le kilométrage actuel d'un véhicule (pré-remplissage du formulaire garage)."""
+    try:
+        vehicule = get_object_or_404(Vehicule, pk=pk)
+        return JsonResponse({'success': True, 'kilometrage_actuel': vehicule.kilometrage_actuel or 0})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@require_http_methods(["GET"])
 def get_types_reparation(request):
     """
     Vue AJAX pour récupérer la liste des types de réparation actifs.

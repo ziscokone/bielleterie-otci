@@ -165,11 +165,13 @@ textarea.form-control { resize: vertical; min-height: 70px; }
                         {{ form.garage_prestataire }}
                         {% if form.garage_prestataire.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.garage_prestataire.errors }}</div>{% endif %}
                     </div>
+                    {% if form.instance.pk %}
                     <div class="col-md-2">
                         <div class="field-label"><i class="bi bi-flag"></i>{{ form.statut.label }}<span class="req">*</span></div>
                         {{ form.statut }}
                         {% if form.statut.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.statut.errors }}</div>{% endif %}
                     </div>
+                    {% endif %}
                     <div class="col-12">
                         <div class="field-label"><i class="bi bi-sticky"></i>{{ form.notes.label }} <span style="font-size:11px;color:#9ca3af;font-weight:400;">(optionnel)</span></div>
                         {{ form.notes }}
@@ -362,11 +364,20 @@ textarea.form-control { resize: vertical; min-height: 70px; }
         // Champ huile : visible seulement si is_vidange=True
         const isVidange = type && type.is_vidange;
 
-        // Pré-remplir l'intervalle si défini sur le type
-        if (type && type.intervalle_km_defaut) {
-            const intervalleField = ligne.querySelector('.ligne-intervalle-field');
-            if (intervalleField && !intervalleField.value) {
+        // Pré-remplir et verrouiller l'intervalle si défini sur le type
+        const intervalleField = ligne.querySelector('.ligne-intervalle-field');
+        if (intervalleField) {
+            if (type && type.intervalle_km_defaut) {
                 intervalleField.value = type.intervalle_km_defaut;
+                intervalleField.readOnly = true;
+                intervalleField.style.background = '#f3f4f6';
+                intervalleField.style.cursor = 'not-allowed';
+                intervalleField.title = 'Défini par le type d\'intervention';
+            } else {
+                intervalleField.readOnly = false;
+                intervalleField.style.background = '';
+                intervalleField.style.cursor = '';
+                intervalleField.title = '';
             }
         }
 
@@ -403,6 +414,15 @@ textarea.form-control { resize: vertical; min-height: 70px; }
             sel.addEventListener('change', () => initTypeSelect(sel));
         }
 
+        // Pré-remplir le km si un véhicule est déjà sélectionné
+        const kmField = newLigne.querySelector('.ligne-km-field');
+        const vSelect = document.getElementById('id_vehicule');
+        if (kmField && vSelect && vSelect.value) {
+            fetch(`/vehicules/api/vehicule/${vSelect.value}/km/`)
+                .then(r => r.json())
+                .then(data => { if (data.success && !kmField.value) kmField.value = data.kilometrage_actuel; });
+        }
+
         // Mettre à jour les numéros et le bouton suppression
         updateLigneNumbers();
     });
@@ -437,6 +457,26 @@ textarea.form-control { resize: vertical; min-height: 70px; }
     }
 
     updateLigneNumbers();
+
+    // ── Pré-remplissage km depuis le véhicule sélectionné ─────────
+    const vehiculeSelect = document.getElementById('id_vehicule');
+    if (vehiculeSelect) {
+        vehiculeSelect.addEventListener('change', function () {
+            const pk = this.value;
+            if (!pk) return;
+            fetch(`/vehicules/api/vehicule/${pk}/km/`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) return;
+                    document.querySelectorAll('.ligne-km-field').forEach(field => {
+                        if (!field.value) field.value = data.kilometrage_actuel;
+                    });
+                });
+        });
+
+        // Au chargement si un véhicule est déjà sélectionné (cas création avec ?vehicule=)
+        if (vehiculeSelect.value) vehiculeSelect.dispatchEvent(new Event('change'));
+    }
 })();
 </script>
 {% endblock %}

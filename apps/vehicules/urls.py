@@ -37,4 +37,5 @@ urlpatterns = [
 
     # API AJAX
     path('api/types-reparation/', views.get_types_reparation, name='api_types_reparation'),
+    path('api/vehicule/<int:pk>/km/', views.get_vehicule_km, name='api_vehicule_km'),
 ]
