@@ -1,5 +1,6 @@
 from django import forms
-from .models import ModeleVehicule, Vehicule, ReparationVehicule, TypeReparation
+from django.forms import inlineformset_factory
+from .models import ModeleVehicule, Vehicule, ReparationVehicule, LigneIntervention, TypeReparation
 from datetime import date
 import json
 
@@ -175,35 +176,58 @@ class VehiculeForm(forms.ModelForm):
 
 
 class ReparationVehiculeForm(forms.ModelForm):
-    """Formulaire pour créer et modifier une réparation."""
+    """Formulaire pour l'entête d'une entrée au garage."""
 
     class Meta:
         model = ReparationVehicule
-        fields = [
-            'vehicule', 'date_reparation', 'type_reparation', 'description',
-            'garage_prestataire', 'montant', 'kilometrage', 'pieces_remplacees',
-            'huile_utilisee', 'intervalle_vidange',
-        ]
+        fields = ['vehicule', 'date_reparation', 'garage_prestataire', 'statut', 'notes']
         widgets = {
-            'vehicule': forms.Select(attrs={
-                'class': 'form-select',
-            }),
-            'date_reparation': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
-            }),
-            'type_reparation': forms.Select(attrs={
-                'class': 'form-select',
-                'id': 'id_type_reparation',
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Décrire la réparation effectuée...'
-            }),
+            'vehicule': forms.Select(attrs={'class': 'form-select'}),
+            'date_reparation': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'garage_prestataire': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Ex: Garage Central Auto'
+            }),
+            'statut': forms.Select(attrs={'class': 'form-select'}),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Notes générales sur cette entrée au garage (optionnel)...'
+            }),
+        }
+        labels = {
+            'vehicule': 'Véhicule',
+            'date_reparation': "Date d'entrée au garage",
+            'garage_prestataire': 'Garage/Prestataire',
+            'statut': 'Statut',
+            'notes': 'Notes générales',
+        }
+
+    def clean_date_reparation(self):
+        date_rep = self.cleaned_data.get('date_reparation')
+        if date_rep and date_rep > date.today():
+            raise forms.ValidationError("La date ne peut pas être dans le futur.")
+        return date_rep
+
+
+class LigneInterventionForm(forms.ModelForm):
+    """Formulaire pour une ligne d'intervention."""
+
+    class Meta:
+        model = LigneIntervention
+        fields = [
+            'type_reparation', 'description', 'montant',
+            'kilometrage', 'pieces_remplacees',
+            'huile_utilisee', 'intervalle_km',
+        ]
+        widgets = {
+            'type_reparation': forms.Select(attrs={
+                'class': 'form-select ligne-type-select',
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Décrire l\'intervention...'
             }),
             'montant': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -212,49 +236,38 @@ class ReparationVehiculeForm(forms.ModelForm):
                 'step': '0.01'
             }),
             'kilometrage': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': 'form-control ligne-km-field',
                 'placeholder': 'Ex: 145000',
                 'min': '0'
             }),
             'pieces_remplacees': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Ex: Embrayage, Disques de frein avant...'
+                'placeholder': 'Ex: Embrayage, disques de frein...'
             }),
             'huile_utilisee': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': 'form-control ligne-huile-field',
                 'placeholder': 'Ex: Total Rubia 15W40'
             }),
-            'intervalle_vidange': forms.Select(attrs={
-                'class': 'form-select',
+            'intervalle_km': forms.NumberInput(attrs={
+                'class': 'form-control ligne-intervalle-field',
+                'placeholder': 'Ex: 10000',
+                'min': '0'
             }),
         }
         labels = {
-            'vehicule': 'Véhicule',
-            'date_reparation': 'Date de réparation',
-            'type_reparation': 'Type de réparation',
+            'type_reparation': "Type d'intervention",
             'description': 'Description',
-            'garage_prestataire': 'Garage/Prestataire',
             'montant': 'Montant (FCFA)',
-            'kilometrage': 'Kilométrage au moment de la vidange',
-            'pieces_remplacees': 'Pièces remplacées (optionnel)',
+            'kilometrage': 'Km au compteur',
+            'pieces_remplacees': 'Pièces remplacées',
             'huile_utilisee': 'Huile utilisée',
-            'intervalle_vidange': 'Intervalle (prochaine vidange)',
+            'intervalle_km': 'Prochain dans (km)',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['type_reparation'].queryset = TypeReparation.objects.filter(actif=True)
-        # Récupérer les IDs des types vidange pour le JS
-        self.vidange_type_ids = list(
-            TypeReparation.objects.filter(actif=True, is_vidange=True).values_list('id', flat=True)
-        )
-
-    def clean_date_reparation(self):
-        date_rep = self.cleaned_data.get('date_reparation')
-        if date_rep and date_rep > date.today():
-            raise forms.ValidationError("La date de réparation ne peut pas être dans le futur.")
-        return date_rep
 
     def clean(self):
         cleaned_data = super().clean()
@@ -262,11 +275,37 @@ class ReparationVehiculeForm(forms.ModelForm):
         if type_rep and type_rep.is_vidange:
             if not cleaned_data.get('huile_utilisee'):
                 self.add_error('huile_utilisee', "L'huile est obligatoire pour une vidange.")
-            if not cleaned_data.get('intervalle_vidange'):
-                self.add_error('intervalle_vidange', "L'intervalle est obligatoire pour une vidange.")
             if not cleaned_data.get('kilometrage'):
                 self.add_error('kilometrage', "Le kilométrage est obligatoire pour une vidange.")
         return cleaned_data
+
+
+def get_vidange_type_ids():
+    """Retourne les IDs des types marqués is_vidange (pour afficher le champ huile)."""
+    return list(TypeReparation.objects.filter(actif=True, is_vidange=True).values_list('id', flat=True))
+
+
+def get_km_type_ids():
+    """Retourne les IDs des types qui nécessitent la saisie du kilométrage."""
+    return list(TypeReparation.objects.filter(actif=True, necessite_kilometrage=True).values_list('id', flat=True))
+
+
+def get_suivi_km_type_ids():
+    """Retourne les IDs des types avec suivi km (necessite_kilometrage ou intervalle_km_defaut défini)."""
+    return list(TypeReparation.objects.filter(actif=True).exclude(
+        necessite_kilometrage=False, intervalle_km_defaut__isnull=True
+    ).values_list('id', flat=True))
+
+
+LigneInterventionFormSet = inlineformset_factory(
+    ReparationVehicule,
+    LigneIntervention,
+    form=LigneInterventionForm,
+    extra=1,
+    min_num=1,
+    validate_min=True,
+    can_delete=True,
+)
 
 
 class TypeReparationForm(forms.ModelForm):
@@ -274,19 +313,29 @@ class TypeReparationForm(forms.ModelForm):
 
     class Meta:
         model = TypeReparation
-        fields = ['nom', 'description', 'is_vidange', 'actif']
+        fields = ['nom', 'description', 'necessite_kilometrage', 'intervalle_km_defaut', 'is_vidange', 'actif']
         widgets = {
             'nom': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ex: Mécanique'
+                'placeholder': 'Ex: Courroie de distribution'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
                 'placeholder': 'Description du type de réparation...'
             }),
+            'necessite_kilometrage': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'id': 'id_necessite_kilometrage'
+            }),
+            'intervalle_km_defaut': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: 10000',
+                'min': '0'
+            }),
             'is_vidange': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
+                'class': 'form-check-input',
+                'id': 'id_is_vidange'
             }),
             'actif': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -295,6 +344,13 @@ class TypeReparationForm(forms.ModelForm):
         labels = {
             'nom': 'Nom',
             'description': 'Description',
-            'is_vidange': "C'est une vidange",
+            'necessite_kilometrage': 'Nécessite saisie kilométrage',
+            'intervalle_km_defaut': 'Intervalle km par défaut',
+            'is_vidange': "C'est une vidange (huile requise)",
             'actif': 'Actif',
+        }
+        help_texts = {
+            'necessite_kilometrage': 'Affiche le bloc kilométrage lors de la création d\'une réparation de ce type.',
+            'intervalle_km_defaut': 'Optionnel — km avant la prochaine intervention (ex: 10 000 pour une vidange).',
+            'is_vidange': 'Affiche en plus le champ "huile utilisée". Uniquement pour les vidanges d\'huile.',
         }

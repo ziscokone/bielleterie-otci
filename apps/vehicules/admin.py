@@ -1,10 +1,11 @@
 from django.contrib import admin
-from .models import ModeleVehicule, Vehicule, TypeReparation, ReparationVehicule
+from .models import ModeleVehicule, Vehicule, TypeReparation, ReparationVehicule, LigneIntervention
 
 
 @admin.register(TypeReparation)
 class TypeReparationAdmin(admin.ModelAdmin):
-    list_display = ('nom', 'description')
+    list_display = ('nom', 'is_vidange', 'intervalle_km_defaut', 'actif')
+    list_filter = ('is_vidange', 'actif')
     search_fields = ('nom',)
     ordering = ('nom',)
 
@@ -52,23 +53,27 @@ class VehiculeAdmin(admin.ModelAdmin):
     )
 
 
+class LigneInterventionInline(admin.TabularInline):
+    model = LigneIntervention
+    extra = 1
+    fields = ('type_reparation', 'description', 'montant', 'kilometrage', 'intervalle_km', 'huile_utilisee')
+
+
 @admin.register(ReparationVehicule)
 class ReparationVehiculeAdmin(admin.ModelAdmin):
-    list_display = ('vehicule', 'date_reparation', 'type_reparation', 'montant', 'garage_prestataire', 'statut')
-    list_filter = ('type_reparation', 'statut', 'date_reparation')
-    search_fields = ('vehicule__immatriculation', 'garage_prestataire', 'description')
+    list_display = ('vehicule', 'date_reparation', 'garage_prestataire', 'statut', 'montant_total')
+    list_filter = ('statut', 'date_reparation')
+    search_fields = ('vehicule__immatriculation', 'garage_prestataire', 'notes')
     ordering = ('-date_reparation',)
     date_hierarchy = 'date_reparation'
+    inlines = [LigneInterventionInline]
 
     fieldsets = (
         ('Informations générales', {
-            'fields': ('vehicule', 'date_reparation', 'type_reparation', 'statut')
+            'fields': ('vehicule', 'date_reparation', 'garage_prestataire', 'statut')
         }),
-        ('Détails de la réparation', {
-            'fields': ('description', 'garage_prestataire', 'montant', 'kilometrage')
-        }),
-        ('Pièces et documents', {
-            'fields': ('pieces_remplacees',),
+        ('Notes', {
+            'fields': ('notes',),
             'classes': ('collapse',)
         }),
     )

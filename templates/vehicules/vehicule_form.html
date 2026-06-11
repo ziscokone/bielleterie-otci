@@ -264,12 +264,10 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                     {% if nb > 0 %}<span class="tab-badge">{{ nb }}</span>{% endif %}
                 {% endwith %}
             </button>
-            <button class="veh-tab-btn" data-target="tab-vidanges">
-                <i class="bi bi-droplet-fill"></i> Vidanges
-                {% if km_restants_vidange is not None %}
-                    {% if km_restants_vidange <= 0 %}<span class="tab-badge">Dépassée</span>
-                    {% elif km_restants_vidange <= 500 %}<span class="tab-badge warn">Bientôt</span>
-                    {% endif %}
+            <button class="veh-tab-btn" data-target="tab-entretien">
+                <i class="bi bi-activity"></i> Suivi entretien
+                {% if nb_alertes_entretien > 0 %}
+                    <span class="tab-badge warn">{{ nb_alertes_entretien }}</span>
                 {% endif %}
             </button>
         </div>
@@ -415,9 +413,9 @@ textarea.form-control { resize: vertical; min-height: 90px; }
             </div>
         </div>
 
-        <!-- ══ Onglet : Vidanges ══ -->
-        <div id="tab-vidanges" style="display:none;">
-            {% include 'vehicules/partials/vidanges_historique.html' %}
+        <!-- ══ Onglet : Suivi entretien ══ -->
+        <div id="tab-entretien" style="display:none;">
+            {% include 'vehicules/partials/suivi_entretien.html' %}
         </div>
         {% endif %}
 
@@ -436,7 +434,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
         btn.addEventListener('click', function () {
             // Désactiver tous les onglets
             tabs.forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('#tab-infos, #tab-reparations, #tab-vidanges')
+            document.querySelectorAll('#tab-infos, #tab-reparations, #tab-entretien')
                     .forEach(p => p.style.display = 'none');
 
             // Activer celui cliqué

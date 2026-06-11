@@ -11,11 +11,13 @@ import json
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
-from core.mixins import AdminRequiredMixin, GestionRequiredMixin
+from core.mixins import AdminRequiredMixin, GestionRequiredMixin, SuperAdminRequiredMixin
 
 logger = logging.getLogger(__name__)
-from .models import ModeleVehicule, Vehicule, ReparationVehicule, TypeReparation
-from .forms import ModeleVehiculeForm, VehiculeForm, ReparationVehiculeForm, TypeReparationForm
+from .models import ModeleVehicule, Vehicule, ReparationVehicule, LigneIntervention, TypeReparation
+from .forms import (ModeleVehiculeForm, VehiculeForm, ReparationVehiculeForm,
+                    LigneInterventionForm, LigneInterventionFormSet, TypeReparationForm,
+                    get_vidange_type_ids, get_km_type_ids, get_suivi_km_type_ids)
 from apps.compagnie.models import Compagnie
 
 
@@ -119,6 +121,43 @@ class VehiculeListView(LoginRequiredMixin, ListView):
         context['nb_en_reparation'] = all_vehicules.filter(
             reparations__statut__in=['en_attente', 'en_cours']
         ).distinct().count()
+
+        # ── Alertes documents (expirés ou dans les 30 jours) ──────────────
+        today = timezone.localdate()
+        docs_fields = [
+            ('date_expiration_assurance', 'Assurance'),
+            ('date_expiration_visite_technique', 'Visite tech.'),
+            ('date_expiration_carte_grise', 'Carte grise'),
+            ('date_expiration_licence_transport', 'Licence'),
+        ]
+        alertes_docs = []
+        for v in Vehicule.objects.filter(actif=True).select_related('modele').order_by('immatriculation'):
+            docs_alertes = []
+            for field, label in docs_fields:
+                date_exp = getattr(v, field)
+                if date_exp:
+                    delta = (date_exp - today).days
+                    if delta <= 30:
+                        if delta < 0:
+                            niveau = 'danger'
+                        elif delta <= 10:
+                            niveau = 'orange'
+                        else:
+                            niveau = 'warning'
+                        docs_alertes.append({
+                            'label': label,
+                            'niveau': niveau,
+                            'delta': delta,
+                            'abs_delta': abs(delta),
+                        })
+            if docs_alertes:
+                levels = [d['niveau'] for d in docs_alertes]
+                worst = 'danger' if 'danger' in levels else ('orange' if 'orange' in levels else 'warning')
+                alertes_docs.append({'vehicule': v, 'docs': docs_alertes, 'worst': worst})
+
+        context['alertes_docs'] = alertes_docs
+        context['nb_docs_expiries'] = sum(1 for a in alertes_docs for d in a['docs'] if d['niveau'] == 'danger')
+        context['nb_docs_bientot'] = sum(1 for a in alertes_docs for d in a['docs'] if d['niveau'] in ('orange', 'warning'))
         return context
 
 
@@ -154,19 +193,48 @@ class VehiculeUpdateView(AdminRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         vehicule = self.object
-        vidanges = vehicule.reparations.filter(
-            type_reparation__is_vidange=True
-        ).select_related('type_reparation').order_by('-date_reparation')
-        context['vidanges'] = vidanges
-        derniere_vidange = vidanges.first()
-        context['derniere_vidange'] = derniere_vidange
-        if (derniere_vidange
-                and derniere_vidange.intervalle_vidange
-                and derniere_vidange.kilometrage is not None):
-            km_prochaine = derniere_vidange.kilometrage + derniere_vidange.intervalle_vidange
-            km_restants = km_prochaine - (vehicule.kilometrage_actuel or 0)
-            context['km_prochaine_vidange'] = km_prochaine
-            context['km_restants_vidange'] = km_restants
+        km_actuel = vehicule.kilometrage_actuel or 0
+
+        # Récupère tous les types avec suivi kilométrique
+        types_suivi = TypeReparation.objects.filter(actif=True).exclude(
+            necessite_kilometrage=False, intervalle_km_defaut__isnull=True
+        )
+
+        suivi_entretien = []
+        for type_rep in types_suivi:
+            # Dernière ligne d'intervention de ce type pour ce véhicule
+            derniere = LigneIntervention.objects.filter(
+                reparation__vehicule=vehicule,
+                type_reparation=type_rep,
+                kilometrage__isnull=False,
+            ).order_by('-reparation__date_reparation').first()
+
+            intervalle = None
+            km_prochaine = None
+            km_restants = None
+
+            if derniere:
+                intervalle = derniere.intervalle_km or type_rep.intervalle_km_defaut
+                if intervalle:
+                    km_prochaine = derniere.kilometrage + intervalle
+                    km_restants = km_prochaine - km_actuel
+
+            suivi_entretien.append({
+                'type': type_rep,
+                'derniere': derniere,
+                'intervalle': intervalle,
+                'km_prochaine': km_prochaine,
+                'km_restants': km_restants,
+            })
+
+        context['suivi_entretien'] = suivi_entretien
+        context['nb_alertes_entretien'] = sum(
+            1 for s in suivi_entretien
+            if s['km_restants'] is not None and s['km_restants'] <= 1000
+        )
+
+        # Nombre de réparations pour le badge onglet
+        context['nb'] = vehicule.reparations.count()
         return context
 
 
@@ -198,7 +266,7 @@ class ReparationVehiculeListView(LoginRequiredMixin, ListView):
 
         type_reparation = self.request.GET.get('type')
         if type_reparation:
-            queryset = queryset.filter(type_reparation_id=type_reparation)
+            queryset = queryset.filter(lignes__type_reparation_id=type_reparation).distinct()
 
         statut = self.request.GET.get('statut')
         if statut:
@@ -211,7 +279,9 @@ class ReparationVehiculeListView(LoginRequiredMixin, ListView):
         if date_fin:
             queryset = queryset.filter(date_reparation__lte=date_fin)
 
-        return queryset.select_related('vehicule', 'vehicule__modele', 'type_reparation').order_by('-date_reparation')
+        return queryset.select_related('vehicule', 'vehicule__modele').prefetch_related(
+            'lignes__type_reparation'
+        ).order_by('-date_reparation')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -226,7 +296,9 @@ class ReparationVehiculeListView(LoginRequiredMixin, ListView):
         context['nb_termines'] = all_reps.filter(statut='terminee').count()
 
         queryset = self.get_queryset()
-        context['cout_total_periode'] = queryset.aggregate(total=Sum('montant'))['total'] or 0
+        context['cout_total_periode'] = LigneIntervention.objects.filter(
+            reparation__in=queryset
+        ).aggregate(total=Sum('montant'))['total'] or 0
 
         context['vehicule_filtre']    = self.request.GET.get('vehicule', '')
         context['type_filtre']        = self.request.GET.get('type', '')
@@ -238,7 +310,7 @@ class ReparationVehiculeListView(LoginRequiredMixin, ListView):
 
 
 class ReparationVehiculeCreateView(GestionRequiredMixin, CreateView):
-    """Créer une nouvelle réparation."""
+    """Créer une nouvelle entrée au garage (avec ses lignes d'intervention)."""
     model = ReparationVehicule
     form_class = ReparationVehiculeForm
     template_name = 'vehicules/reparation_form.html'
@@ -252,17 +324,38 @@ class ReparationVehiculeCreateView(GestionRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['vidange_type_ids'] = self.get_form().vidange_type_ids
+        if self.request.POST:
+            context['formset'] = LigneInterventionFormSet(self.request.POST, prefix='lignes')
+        else:
+            context['formset'] = LigneInterventionFormSet(prefix='lignes')
+        context['vidange_type_ids'] = get_vidange_type_ids()
+        context['km_type_ids'] = get_km_type_ids()
+        context['suivi_km_type_ids'] = get_suivi_km_type_ids()
+        context['types_reparation_json'] = self._get_types_json()
         return context
+
+    def _get_types_json(self):
+        import json
+        types = TypeReparation.objects.filter(actif=True).values(
+            'id', 'nom', 'necessite_kilometrage', 'is_vidange', 'intervalle_km_defaut'
+        )
+        return json.dumps(list(types))
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context['formset']
+        if formset.is_valid():
+            self.object = form.save()
+            formset.instance = self.object
+            formset.save()
+            messages.success(self.request, 'Réparation enregistrée avec succès.')
+            return redirect(self.get_success_url())
+        return self.render_to_response(self.get_context_data(form=form))
 
     def get_success_url(self):
         if self.request.GET.get('from_vehicule'):
             return reverse_lazy('vehicules:vehicule_update', kwargs={'pk': self.object.vehicule.pk})
         return reverse_lazy('vehicules:reparation_list')
-
-    def form_valid(self, form):
-        messages.success(self.request, 'Réparation enregistrée avec succès.')
-        return super().form_valid(form)
 
 
 class ReparationVehiculeDetailView(LoginRequiredMixin, DetailView):
@@ -273,7 +366,7 @@ class ReparationVehiculeDetailView(LoginRequiredMixin, DetailView):
 
 
 class ReparationVehiculeUpdateView(GestionRequiredMixin, UpdateView):
-    """Modifier une réparation."""
+    """Modifier une entrée au garage."""
     model = ReparationVehicule
     form_class = ReparationVehiculeForm
     template_name = 'vehicules/reparation_form.html'
@@ -285,17 +378,42 @@ class ReparationVehiculeUpdateView(GestionRequiredMixin, UpdateView):
             return redirect('vehicules:reparation_detail', pk=reparation.pk)
         return super().dispatch(request, *args, **kwargs)
 
+    def _get_types_json(self):
+        import json
+        types = TypeReparation.objects.filter(actif=True).values(
+            'id', 'nom', 'necessite_kilometrage', 'is_vidange', 'intervalle_km_defaut'
+        )
+        return json.dumps(list(types))
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['vidange_type_ids'] = self.get_form().vidange_type_ids
+        if self.request.POST:
+            context['formset'] = LigneInterventionFormSet(
+                self.request.POST, instance=self.object, prefix='lignes'
+            )
+        else:
+            context['formset'] = LigneInterventionFormSet(
+                instance=self.object, prefix='lignes'
+            )
+        context['vidange_type_ids'] = get_vidange_type_ids()
+        context['km_type_ids'] = get_km_type_ids()
+        context['suivi_km_type_ids'] = get_suivi_km_type_ids()
+        context['types_reparation_json'] = self._get_types_json()
         return context
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context['formset']
+        if formset.is_valid():
+            self.object = form.save()
+            formset.instance = self.object
+            formset.save()
+            messages.success(self.request, 'Réparation modifiée avec succès.')
+            return redirect(self.get_success_url())
+        return self.render_to_response(self.get_context_data(form=form))
 
     def get_success_url(self):
         return reverse_lazy('vehicules:reparation_detail', kwargs={'pk': self.object.pk})
-
-    def form_valid(self, form):
-        messages.success(self.request, 'Réparation modifiée avec succès.')
-        return super().form_valid(form)
 
 
 class ReparationVehiculeDemarrerView(GestionRequiredMixin, View):
@@ -322,7 +440,7 @@ class ReparationVehiculeTerminerView(GestionRequiredMixin, View):
         return redirect('vehicules:reparation_list')
 
 
-class ReparationVehiculeDeleteView(GestionRequiredMixin, DeleteView):
+class ReparationVehiculeDeleteView(SuperAdminRequiredMixin, DeleteView):
     """Supprimer une réparation — uniquement si statut 'en_attente'."""
     model = ReparationVehicule
     template_name = 'vehicules/reparation_confirm_delete.html'
@@ -362,23 +480,27 @@ class RapportReparationsView(GestionRequiredMixin, TemplateView):
             context['date_debut'] = date_debut
             context['date_fin'] = date_fin
 
-            # Requête filtrée
+            # Requête filtrée — on travaille sur les lignes d'intervention
+            lignes = LigneIntervention.objects.filter(
+                reparation__date_reparation__gte=date_debut,
+                reparation__date_reparation__lte=date_fin
+            )
             reparations = ReparationVehicule.objects.filter(
                 date_reparation__gte=date_debut,
                 date_reparation__lte=date_fin
             )
 
             # Statistiques globales
-            context['cout_total'] = reparations.aggregate(total=Sum('montant'))['total'] or 0
+            context['cout_total'] = lignes.aggregate(total=Sum('montant'))['total'] or 0
             context['nb_reparations'] = reparations.count()
             context['nb_vehicules'] = reparations.values('vehicule').distinct().count()
 
             # Statistiques par véhicule
             vehicules_stats = []
             for vehicule in Vehicule.objects.select_related('modele').all():
-                reparations_vehicule = reparations.filter(vehicule=vehicule)
-                cout_total = reparations_vehicule.aggregate(total=Sum('montant'))['total'] or 0
-                nb_reparations = reparations_vehicule.count()
+                lignes_vehicule = lignes.filter(reparation__vehicule=vehicule)
+                cout_total = lignes_vehicule.aggregate(total=Sum('montant'))['total'] or 0
+                nb_reparations = reparations.filter(vehicule=vehicule).count()
 
                 if nb_reparations > 0:
                     cout_moyen = cout_total / nb_reparations
@@ -407,7 +529,7 @@ class RapportReparationsView(GestionRequiredMixin, TemplateView):
             types_stats = []
             cout_total_types = context['cout_total']
             for type_rep in TypeReparation.objects.filter(actif=True):
-                cout = reparations.filter(type_reparation=type_rep).aggregate(total=Sum('montant'))['total'] or 0
+                cout = lignes.filter(type_reparation=type_rep).aggregate(total=Sum('montant'))['total'] or 0
                 if cout > 0:
                     pourcentage = (cout / cout_total_types * 100) if cout_total_types > 0 else 0
                     types_stats.append({
@@ -450,10 +572,10 @@ class RapportReparationsView(GestionRequiredMixin, TemplateView):
             matrice = []
             for v_stat in vehicules_stats:
                 vehicule = v_stat['vehicule']
-                reps_veh = reparations.filter(vehicule=vehicule)
+                lignes_veh = lignes.filter(reparation__vehicule=vehicule)
                 costs = {}
                 for type_rep in types_actifs:
-                    montant = reps_veh.filter(type_reparation=type_rep).aggregate(
+                    montant = lignes_veh.filter(type_reparation=type_rep).aggregate(
                         total=Sum('montant')
                     )['total'] or 0
                     costs[type_rep.nom] = float(montant)
@@ -666,10 +788,10 @@ class RentabiliteVehiculeView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
         context['types_depenses_presents'] = sorted(list(types_depenses_presents))
 
         # Réparations du véhicule sur la période
-        total_reparations = ReparationVehicule.objects.filter(
-            vehicule=vehicule_selectionne,
-            date_reparation__gte=date_debut,
-            date_reparation__lte=date_fin
+        total_reparations = LigneIntervention.objects.filter(
+            reparation__vehicule=vehicule_selectionne,
+            reparation__date_reparation__gte=date_debut,
+            reparation__date_reparation__lte=date_fin
         ).aggregate(total=Sum('montant'))['total'] or Decimal('0')
 
         # Colonnes dynamiques
@@ -719,7 +841,10 @@ def get_types_reparation(request):
             {
                 'id': t.id,
                 'nom': t.nom,
-                'description': t.description or ''
+                'description': t.description or '',
+                'necessite_kilometrage': t.necessite_kilometrage,
+                'is_vidange': t.is_vidange,
+                'intervalle_km_defaut': t.intervalle_km_defaut,
             }
             for t in types
         ]

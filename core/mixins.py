@@ -20,6 +20,21 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
         return super().handle_no_permission()
 
 
+class SuperAdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """
+    Mixin réservé exclusivement au Super Administrateur.
+    Utilisé pour les actions destructives comme la suppression de données.
+    """
+
+    def test_func(self):
+        return self.request.user.role == 'super_admin'
+
+    def handle_no_permission(self):
+        if self.request.user.is_authenticated:
+            raise PermissionDenied("Cette action est réservée au Super Administrateur.")
+        return super().handle_no_permission()
+
+
 class GestionRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
     Mixin qui requiert que l'utilisateur soit PDG, Super Admin, Chef de Gare ou Guichetier.

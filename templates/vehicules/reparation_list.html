@@ -346,16 +346,20 @@ Macro pour générer les paramètres de pagination en conservant les filtres.
                             </div>
                         </td>
                         <td>
-                            <span class="type-badge">{{ rep.type_reparation.nom }}</span>
+                            {% for ligne in rep.lignes.all %}
+                            <span class="type-badge" style="display:inline-block;margin:1px;">{{ ligne.type_reparation.nom }}</span>
+                            {% endfor %}
                         </td>
                         <td>
-                            {% if rep.montant >= 1000000 %}
-                                <span class="montant-haut">{{ rep.montant|floatformat:0|intcomma }} F</span>
-                            {% elif rep.montant >= 500000 %}
-                                <span class="montant-moyen">{{ rep.montant|floatformat:0|intcomma }} F</span>
+                            {% with total=rep.montant_total %}
+                            {% if total >= 1000000 %}
+                                <span class="montant-haut">{{ total|floatformat:0|intcomma }} F</span>
+                            {% elif total >= 500000 %}
+                                <span class="montant-moyen">{{ total|floatformat:0|intcomma }} F</span>
                             {% else %}
-                                <span class="montant-bas">{{ rep.montant|floatformat:0|intcomma }} F</span>
+                                <span class="montant-bas">{{ total|floatformat:0|intcomma }} F</span>
                             {% endif %}
+                            {% endwith %}
                         </td>
                         <td style="font-size:12px;">{{ rep.garage_prestataire }}</td>
                         <td>
@@ -386,10 +390,12 @@ Macro pour générer les paramètres de pagination en conservant les filtres.
                                         <i class="bi bi-play-fill"></i>
                                     </button>
                                 </form>
+                                {% if user.role == 'super_admin' %}
                                 <a href="{% url 'vehicules:reparation_delete' rep.pk %}"
                                    class="btn-action del" title="Supprimer">
                                     <i class="bi bi-trash"></i>
                                 </a>
+                                {% endif %}
                                 {% elif rep.statut == 'en_cours' %}
                                 <form method="post" action="{% url 'vehicules:reparation_terminer' rep.pk %}" class="d-inline">
                                     {% csrf_token %}

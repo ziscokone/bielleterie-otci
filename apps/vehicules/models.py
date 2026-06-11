@@ -271,15 +271,17 @@ class Vehicule(models.Model):
     def get_cout_total_reparations(self):
         """Retourne le coût total des réparations du véhicule."""
         from django.db.models import Sum
-        total = self.reparations.aggregate(total=Sum('montant'))['total']
+        total = LigneIntervention.objects.filter(
+            reparation__vehicule=self
+        ).aggregate(total=Sum('montant'))['total']
         return total or 0
 
     def get_nombre_reparations(self):
-        """Retourne le nombre total de réparations du véhicule."""
+        """Retourne le nombre total d'entrées au garage du véhicule."""
         return self.reparations.count()
 
     def get_derniere_reparation(self):
-        """Retourne la dernière réparation effectuée."""
+        """Retourne la dernière entrée au garage."""
         return self.reparations.order_by('-date_reparation').first()
 
     @property
@@ -306,10 +308,21 @@ class TypeReparation(models.Model):
         blank=True,
         verbose_name="Description"
     )
+    necessite_kilometrage = models.BooleanField(
+        default=False,
+        verbose_name="Nécessite saisie kilométrage",
+        help_text="Cocher si ce type d'intervention nécessite de saisir le km au compteur (courroie, vidange, freins…)"
+    )
     is_vidange = models.BooleanField(
         default=False,
-        verbose_name="C'est une vidange",
-        help_text="Cocher si ce type de réparation est une vidange (huile + intervalle requis)"
+        verbose_name="C'est une vidange (huile requise)",
+        help_text="Cocher uniquement si c'est une vidange d'huile — affiche le champ huile utilisée"
+    )
+    intervalle_km_defaut = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Intervalle km (défaut)",
+        help_text="Si renseigné, ce type sera suivi par kilométrage (ex: 10000 pour une vidange tous les 10 000 km)"
     )
     actif = models.BooleanField(
         default=True,
@@ -326,19 +339,18 @@ class TypeReparation(models.Model):
     def __str__(self):
         return self.nom
 
+    @property
+    def a_suivi_km(self):
+        return self.necessite_kilometrage or self.intervalle_km_defaut is not None
+
 
 class ReparationVehicule(models.Model):
-    """Modèle représentant une réparation effectuée sur un véhicule."""
+    """Entrée au garage : regroupe une ou plusieurs lignes d'intervention."""
 
     STATUT_CHOICES = [
         ('en_attente', 'En attente'),
         ('en_cours', 'En cours'),
         ('terminee', 'Terminée'),
-    ]
-
-    INTERVALLE_VIDANGE_CHOICES = [
-        (5000, '5 000 km'),
-        (10000, '10 000 km'),
     ]
 
     vehicule = models.ForeignKey(
@@ -347,31 +359,10 @@ class ReparationVehicule(models.Model):
         related_name='reparations',
         verbose_name="Véhicule"
     )
-    date_reparation = models.DateField(verbose_name="Date de réparation")
-    type_reparation = models.ForeignKey(
-        TypeReparation,
-        on_delete=models.PROTECT,
-        related_name='reparations',
-        verbose_name="Type de réparation"
-    )
-    description = models.TextField(verbose_name="Description")
+    date_reparation = models.DateField(verbose_name="Date d'entrée au garage")
     garage_prestataire = models.CharField(
         max_length=200,
         verbose_name="Garage/Prestataire"
-    )
-    montant = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        verbose_name="Montant (FCFA)"
-    )
-    kilometrage = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        verbose_name="Kilométrage"
-    )
-    pieces_remplacees = models.TextField(
-        blank=True,
-        verbose_name="Pièces remplacées"
     )
     statut = models.CharField(
         max_length=20,
@@ -379,32 +370,10 @@ class ReparationVehicule(models.Model):
         default='en_attente',
         verbose_name="Statut"
     )
-    huile_utilisee = models.CharField(
-        max_length=200,
+    notes = models.TextField(
         blank=True,
-        verbose_name="Huile utilisée",
-        help_text="Type/marque d'huile utilisée (ex: Total Rubia 15W40)"
-    )
-    intervalle_vidange = models.PositiveIntegerField(
-        choices=INTERVALLE_VIDANGE_CHOICES,
-        null=True,
-        blank=True,
-        verbose_name="Intervalle vidange",
-        help_text="Kilométrage avant la prochaine vidange"
-    )
-    creee_depuis_guichet = models.BooleanField(
-        default=False,
-        verbose_name="Créée depuis le guichet",
-        help_text="Indique si cette réparation a été créée depuis une dépense de voyage"
-    )
-    voyage_source = models.ForeignKey(
-        'voyages.Voyage',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='reparations_generees',
-        verbose_name="Voyage source",
-        help_text="Voyage depuis lequel cette réparation a été créée"
+        verbose_name="Notes générales",
+        help_text="Observations globales sur cette entrée au garage"
     )
     date_creation = models.DateTimeField(auto_now_add=True)
     date_modification = models.DateTimeField(auto_now=True)
@@ -415,13 +384,97 @@ class ReparationVehicule(models.Model):
         ordering = ['-date_reparation']
 
     def __str__(self):
-        return f"{self.vehicule.immatriculation} - {self.type_reparation.nom} - {self.date_reparation}"
+        return f"{self.vehicule.immatriculation} - {self.date_reparation}"
+
+    @property
+    def montant_total(self):
+        from django.db.models import Sum
+        total = self.lignes.aggregate(total=Sum('montant'))['total']
+        return total or 0
+
+    @property
+    def types_interventions(self):
+        return ', '.join(self.lignes.values_list('type_reparation__nom', flat=True))
 
     def delete(self, *args, **kwargs):
-        """Empêche la suppression si la réparation est liée à une dépense de voyage."""
         from django.core.exceptions import ValidationError
         if hasattr(self, 'depense_source') and self.depense_source.exists():
             raise ValidationError(
                 "Impossible de supprimer cette réparation car elle est liée à une dépense de voyage."
             )
         super().delete(*args, **kwargs)
+
+
+class LigneIntervention(models.Model):
+    """Une ligne d'intervention au sein d'une entrée au garage."""
+
+    reparation = models.ForeignKey(
+        ReparationVehicule,
+        on_delete=models.CASCADE,
+        related_name='lignes',
+        verbose_name="Réparation"
+    )
+    ordre = models.PositiveIntegerField(default=1, verbose_name="Ordre")
+    type_reparation = models.ForeignKey(
+        TypeReparation,
+        on_delete=models.PROTECT,
+        related_name='lignes',
+        verbose_name="Type d'intervention"
+    )
+    description = models.TextField(verbose_name="Description")
+    montant = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Montant (FCFA)"
+    )
+    kilometrage = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        verbose_name="Kilométrage au compteur"
+    )
+    pieces_remplacees = models.TextField(
+        blank=True,
+        verbose_name="Pièces remplacées"
+    )
+    huile_utilisee = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Huile utilisée",
+        help_text="Type/marque d'huile (ex: Total Rubia 15W40) — pour les vidanges"
+    )
+    intervalle_km = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Intervalle km",
+        help_text="Kilométrage avant la prochaine intervention de ce type"
+    )
+    creee_depuis_guichet = models.BooleanField(
+        default=False,
+        verbose_name="Créée depuis le guichet"
+    )
+    voyage_source = models.ForeignKey(
+        'voyages.Voyage',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='lignes_reparation',
+        verbose_name="Voyage source"
+    )
+
+    class Meta:
+        verbose_name = "Ligne d'intervention"
+        verbose_name_plural = "Lignes d'intervention"
+        ordering = ['reparation', 'ordre']
+
+    def __str__(self):
+        return f"{self.type_reparation.nom} — {self.reparation}"
+
+    @property
+    def km_prochaine(self):
+        """Km prévu pour la prochaine intervention de ce type."""
+        if self.kilometrage is None:
+            return None
+        intervalle = self.intervalle_km or self.type_reparation.intervalle_km_defaut
+        if intervalle:
+            return self.kilometrage + intervalle
+        return None

@@ -173,6 +173,91 @@
 /* État vide */
 .empty-state { text-align: center; padding: 56px 20px; color: #9ca3af; }
 .empty-state i { font-size: 3rem; display: block; margin-bottom: 12px; }
+
+/* ── Alertes Documents ─────────────────────────────────────────── */
+.alert-docs-section {
+    background: #fff;
+    border: 1px solid #fde8e8;
+    border-radius: 13px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(220,38,38,0.06);
+    margin-bottom: 22px;
+}
+.alert-docs-header {
+    padding: 11px 20px;
+    background: linear-gradient(135deg, #1e3260 0%, #2d4a8a 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.alert-docs-header .ads-badge {
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.6;
+}
+.ads-badge.danger  { background: #dc2626; color: #fff; }
+.ads-badge.warning { background: #f59e0b; color: #fff; }
+
+.alert-docs-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 20px;
+    background: #fafbfc;
+}
+
+.doc-alert-card {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #e5e7eb;
+    padding: 10px 14px;
+    min-width: 190px;
+    max-width: 240px;
+    flex: 0 0 auto;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.doc-alert-card.worst-danger  { border-left-color: #dc2626; }
+.doc-alert-card.worst-orange  { border-left-color: #ea580c; }
+.doc-alert-card.worst-warning { border-left-color: #d97706; }
+
+.doc-alert-veh {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid #f3f4f6;
+}
+.doc-alert-immat {
+    font-weight: 700;
+    font-size: 13px;
+    color: #111827;
+}
+
+.doc-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 5px;
+}
+.doc-item-label { font-size: 11px; color: #6b7280; font-weight: 500; }
+.doc-item-badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 10px;
+    white-space: nowrap;
+}
+.doc-item-badge.danger  { background: #fee2e2; color: #991b1b; }
+.doc-item-badge.orange  { background: #ffedd5; color: #9a3412; }
+.doc-item-badge.warning { background: #fef9c3; color: #854d0e; }
 </style>
 {% endblock %}
 
@@ -252,6 +337,47 @@
             </div>
         </form>
     </div>
+
+    <!-- ── Alertes Documents ─────────────────────────────────────── -->
+    {% if alertes_docs %}
+    <div class="alert-docs-section">
+        <div class="alert-docs-header">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>Alertes Documents — {{ alertes_docs|length }} véhicule{{ alertes_docs|length|pluralize }}</span>
+            <div class="ms-auto d-flex gap-2">
+                {% if nb_docs_expiries > 0 %}
+                <span class="ads-badge danger"><i class="bi bi-x-circle me-1"></i>{{ nb_docs_expiries }} expiré{{ nb_docs_expiries|pluralize }}</span>
+                {% endif %}
+                {% if nb_docs_bientot > 0 %}
+                <span class="ads-badge warning"><i class="bi bi-clock me-1"></i>{{ nb_docs_bientot }} bientôt</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="alert-docs-grid">
+            {% for alerte in alertes_docs %}
+            <div class="doc-alert-card worst-{{ alerte.worst }}">
+                <div class="doc-alert-veh">
+                    <i class="bi bi-bus-front" style="color:var(--color-accent);font-size:14px"></i>
+                    <span class="doc-alert-immat">{{ alerte.vehicule.immatriculation }}</span>
+                </div>
+                <div class="doc-alert-docs">
+                    {% for doc in alerte.docs %}
+                    <div class="doc-item">
+                        <span class="doc-item-label">{{ doc.label }}</span>
+                        <span class="doc-item-badge {{ doc.niveau }}">
+                            {% if doc.delta < 0 %}-{{ doc.abs_delta }}j
+                            {% elif doc.delta == 0 %}Auj.
+                            {% else %}J-{{ doc.delta }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
     <!-- ── Table ────────────────────────────────────────────────── -->
     <div class="veh-card">

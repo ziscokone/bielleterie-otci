@@ -681,7 +681,7 @@ def add_voyage_depenses(request, pk):
 
                 # Auto-créer la réparation si données inline présentes
                 if is_reparation_type and reparation_inline:
-                    from apps.vehicules.models import Vehicule as VehiculeModel, TypeReparation, ReparationVehicule
+                    from apps.vehicules.models import Vehicule as VehiculeModel, TypeReparation, ReparationVehicule, LigneIntervention
                     from datetime import datetime as dt
                     try:
                         rep_vehicule = VehiculeModel.objects.get(pk=rep_vehicule_id, actif=True)
@@ -690,11 +690,14 @@ def add_voyage_depenses(request, pk):
                         reparation = ReparationVehicule.objects.create(
                             vehicule=rep_vehicule,
                             date_reparation=rep_date_obj,
+                            garage_prestataire=rep_garage,
+                            statut='en_attente',
+                        )
+                        LigneIntervention.objects.create(
+                            reparation=reparation,
                             type_reparation=rep_type,
                             description=description or '',
-                            garage_prestataire=rep_garage,
                             montant=float(montant),
-                            statut='en_attente',
                             creee_depuis_guichet=True,
                             voyage_source=voyage,
                         )
@@ -1226,7 +1229,7 @@ def creer_reparation_depuis_depense(request, depense_id):
             return JsonResponse({'success': False, 'error': 'Le garage/prestataire est obligatoire'}, status=400)
 
         # Récupérer le véhicule et le type de réparation
-        from apps.vehicules.models import Vehicule, TypeReparation, ReparationVehicule
+        from apps.vehicules.models import Vehicule, TypeReparation, ReparationVehicule, LigneIntervention
         from datetime import datetime
 
         try:
@@ -1245,17 +1248,21 @@ def creer_reparation_depuis_depense(request, depense_id):
         except ValueError:
             return JsonResponse({'success': False, 'error': 'Format de date invalide'}, status=400)
 
-        # Créer la réparation
+        # Créer la réparation (entête) + la ligne d'intervention
+        from apps.vehicules.models import LigneIntervention
         reparation = ReparationVehicule.objects.create(
             vehicule=vehicule,
             date_reparation=date_reparation_obj,
-            type_reparation=type_reparation,
-            description=description or depense.description,
             garage_prestataire=garage_prestataire,
-            montant=depense.montant,  # Montant de la dépense
-            statut='en_attente',  # Statut automatique
+            statut='en_attente',
+        )
+        LigneIntervention.objects.create(
+            reparation=reparation,
+            type_reparation=type_reparation,
+            description=description or (depense.description or ''),
+            montant=depense.montant,
             creee_depuis_guichet=True,
-            voyage_source=voyage
+            voyage_source=voyage,
         )
 
         # Lier la réparation à la dépense
@@ -1269,7 +1276,7 @@ def creer_reparation_depuis_depense(request, depense_id):
             'reparation_numero': f"#{reparation.pk}",
             'vehicule': vehicule.immatriculation,
             'type_reparation': type_reparation.nom,
-            'montant': float(reparation.montant)
+            'montant': float(depense.montant)
         })
 
     except json.JSONDecodeError:
