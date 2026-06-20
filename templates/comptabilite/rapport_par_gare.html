@@ -341,7 +341,7 @@
                                 <td class="montant">{{ ligne_data.recette_bagages|floatformat:0|intcomma }}</td>
                             {% elif col == 'Total Dépenses' %}
                                 <td class="montant text-danger">{{ ligne_data.total_depenses|floatformat:0|intcomma }}</td>
-                            {% elif col == 'Bénéfice Net' %}
+                            {% elif col == 'Recette Net' %}
                                 <td class="montant text-success fw-bold">{{ ligne_data.benefice_net|floatformat:0|intcomma }}</td>
                             {% else %}
                                 {# Colonnes de dépenses dynamiques #}
@@ -370,7 +370,7 @@
                                 <td class="montant">{{ totaux.recette_bagages|floatformat:0|intcomma }}</td>
                             {% elif col == 'Total Dépenses' %}
                                 <td class="montant text-danger">{{ totaux.total_depenses|floatformat:0|intcomma }}</td>
-                            {% elif col == 'Bénéfice Net' %}
+                            {% elif col == 'Recette Net' %}
                                 <td class="montant text-success">{{ totaux.benefice_net|floatformat:0|intcomma }}</td>
                             {% else %}
                                 {# Totaux des colonnes de dépenses #}
@@ -397,7 +397,7 @@
             <div class="resume-item">
                 <span class="resume-label">
                     <i class="bi bi-cash-coin me-2"></i>
-                    VERSEMENT (Bénéfice Net)
+                    VERSEMENT (Recette Net)
                 </span>
                 <span class="resume-value">{{ total_versement|floatformat:0|intcomma }} FCFA</span>
             </div>

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -230,3 +231,30 @@ class Voyage(models.Model):
 
         self.vehicule = nouveau_vehicule
         self.save(update_fields=['vehicule', 'date_modification'])
+
+
+class ReassignationSiege(models.Model):
+    """Trace chaque réassignation de siège lors d'un changement de véhicule."""
+    voyage = models.ForeignKey(
+        Voyage, on_delete=models.CASCADE,
+        related_name='reassignations', verbose_name="Voyage"
+    )
+    billet = models.ForeignKey(
+        'billets.Billet', on_delete=models.CASCADE,
+        related_name='reassignations', verbose_name="Billet"
+    )
+    ancien_siege = models.PositiveIntegerField(verbose_name="Ancien siège")
+    nouveau_siege = models.PositiveIntegerField(verbose_name="Nouveau siège")
+    date_reassignation = models.DateTimeField(auto_now_add=True)
+    effectuee_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, verbose_name="Effectuée par"
+    )
+
+    class Meta:
+        verbose_name = "Réassignation de siège"
+        verbose_name_plural = "Réassignations de sièges"
+        ordering = ['-date_reassignation']
+
+    def __str__(self):
+        return f"Siège {self.ancien_siege} → {self.nouveau_siege} ({self.voyage})"

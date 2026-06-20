@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, ListView, DetailView
 from django.http import JsonResponse
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.contrib import messages
 
 from apps.billets.models import Billet
@@ -59,7 +59,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         )
         if not user.has_global_access and user.gare:
             prochains_voyages = prochains_voyages.filter(gare=user.gare)
-        context['prochains_voyages'] = prochains_voyages.order_by('date_depart', 'heure_depart')[:5]
+        context['prochains_voyages'] = prochains_voyages.annotate(
+            recette_billets=Sum('billets__montant', filter=Q(billets__statut='paye'))
+        ).order_by('date_depart', 'heure_depart')[:5]
 
         return context
 

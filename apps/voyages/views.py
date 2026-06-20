@@ -1,9 +1,10 @@
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count, Max
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
@@ -220,7 +221,14 @@ class VoyageBordereauView(GestionRequiredMixin, TemplateView):
                 return HttpResponseForbidden("Accès non autorisé")
 
         # Récupérer uniquement les billets payés (exclure réservés et reportés)
-        billets = voyage.billets.filter(statut='paye').select_related('guichetier').order_by('numero_siege')
+        billets = voyage.billets.filter(statut='paye').select_related('guichetier', 'destination').order_by('numero_siege')
+
+        # Calculer le recap destinations
+        destinations_count = {}
+        for billet in billets:
+            ville = billet.destination.ville_arrivee if billet.destination else voyage.ligne.ville_arrivee
+            destinations_count[ville] = destinations_count.get(ville, 0) + 1
+        destinations_recap = sorted(destinations_count.items(), key=lambda x: x[0])
 
         # Récupérer les dépenses du voyage
         depenses = voyage.depenses.select_related('type_depense').order_by('type_depense__ordre', 'type_depense__nom')
@@ -237,6 +245,7 @@ class VoyageBordereauView(GestionRequiredMixin, TemplateView):
         context['billets_payes'] = billets
         context['nb_billets_payes'] = billets.count()
         context['nb_billets_reserves'] = 0  # Non affichés sur le bordereau
+        context['destinations_recap'] = destinations_recap
         context['montant_total'] = montant_total_billets
         context['recette_bagages'] = recette_bagages
         context['total_recettes'] = total_recettes
@@ -366,25 +375,30 @@ def get_voyage_agents(request, pk):
             for c in convoyeurs
         ]
 
-        # Calculer le plus haut numéro de siège vendu pour filtrer les véhicules
-        max_siege = voyage.billets.aggregate(max_siege=Max('numero_siege'))['max_siege']
-        capacite_minimale = max_siege if max_siege else 0
+        # Filtrer par nb de billets vendus (pas max_siege) pour permettre la réassignation
+        nb_billets = voyage.billets.exclude(statut='reporte').count()
 
-        # Récupérer tous les véhicules actifs avec capacité suffisante
+        # Récupérer tous les véhicules actifs pouvant accueillir le nb de billets vendus
         # Exclure les véhicules en réparation (statut en_attente ou en_cours)
         vehicules = Vehicule.objects.filter(
             actif=True,
-            modele__capacite__gte=capacite_minimale
+            modele__capacite__gte=nb_billets
         ).exclude(
             reparations__statut__in=['en_attente', 'en_cours']
         ).select_related('modele', 'compagnie').order_by('immatriculation')
+
+        # Calculer le max_siege pour info côté frontend
+        max_siege = voyage.billets.exclude(statut='reporte').aggregate(
+            max_siege=Max('numero_siege')
+        )['max_siege'] or 0
 
         vehicules_data = [
             {
                 'id': v.id,
                 'immatriculation': v.immatriculation,
                 'modele_nom': v.modele.nom,
-                'capacite': v.capacite
+                'capacite': v.capacite,
+                'needs_reassignment': max_siege > v.capacite,
             }
             for v in vehicules
         ]
@@ -401,7 +415,8 @@ def get_voyage_agents(request, pk):
             'chauffeurs': chauffeurs_data,
             'convoyeurs': convoyeurs_data,
             'vehicules': vehicules_data,
-            'capacite_minimale': capacite_minimale,
+            'nb_billets': nb_billets,
+            'max_siege': max_siege,
             'voyage': voyage_data
         })
 
@@ -430,6 +445,7 @@ def save_voyage_agents(request, pk):
 
         # Récupérer les données JSON
         data = json.loads(request.body)
+        preview_only = data.get('preview_only', False)
         chauffeur_id = data.get('chauffeur_id')
         convoyeur_id = data.get('convoyeur_id')
         vehicule_id = data.get('vehicule_id')
@@ -449,11 +465,10 @@ def save_voyage_agents(request, pk):
             voyage.convoyeur = None
 
         # Assigner le véhicule
+        reassignations = []
         if vehicule_id:
-            # Vérifier que le véhicule existe et est actif
             vehicule = get_object_or_404(Vehicule, pk=vehicule_id, actif=True)
 
-            # Vérification : véhicule pas en réparation
             if vehicule.est_en_reparation:
                 return JsonResponse({
                     'success': False,
@@ -461,20 +476,69 @@ def save_voyage_agents(request, pk):
                              f'et ne peut pas être assigné à un voyage.'
                 }, status=400)
 
-            # Vérification supplémentaire : capacité suffisante
-            max_siege = voyage.billets.aggregate(max_siege=Max('numero_siege'))['max_siege']
-            if max_siege and vehicule.capacite < max_siege:
+            billets_actifs = voyage.billets.exclude(statut='reporte')
+            nb_billets = billets_actifs.count()
+
+            # Blocage strict : trop de billets pour ce véhicule
+            if nb_billets > vehicule.capacite:
                 return JsonResponse({
                     'success': False,
-                    'error': f'Le véhicule sélectionné a une capacité de {vehicule.capacite} places, '
-                             f'mais le siège {max_siege} a déjà été vendu.'
+                    'error': f'Le véhicule sélectionné a {vehicule.capacite} places, '
+                             f'mais {nb_billets} billets ont déjà été vendus.'
                 }, status=400)
+
+            # Réassignation nécessaire si des sièges dépassent la capacité du nouveau véhicule
+            billets_a_reassigner = billets_actifs.filter(numero_siege__gt=vehicule.capacite)
+            if billets_a_reassigner.exists():
+                # Sièges déjà pris dans la nouvelle capacité
+                sieges_pris = set(
+                    billets_actifs.filter(numero_siege__lte=vehicule.capacite)
+                    .values_list('numero_siege', flat=True)
+                )
+                # Sièges vendables du nouveau véhicule
+                sieges_vendables = set(vehicule.get_sieges_vendables())
+                sieges_libres = sorted(sieges_vendables - sieges_pris)
+
+                if len(sieges_libres) < billets_a_reassigner.count():
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Pas assez de sièges libres disponibles sur le nouveau véhicule.'
+                    }, status=400)
+
+                for billet, nouveau_siege in zip(billets_a_reassigner.order_by('numero_siege'), sieges_libres):
+                    reassignations.append({
+                        'billet_id': billet.pk,
+                        'client_nom': billet.client_nom,
+                        'client_telephone': billet.client_telephone,
+                        'ancien_siege': billet.numero_siege,
+                        'nouveau_siege': nouveau_siege,
+                    })
+
+                # Mode preview : on retourne la liste sans rien modifier
+                if preview_only:
+                    return JsonResponse({'success': True, 'reassignations': reassignations})
+
+                from .models import ReassignationSiege
+                for r, (billet, nouveau_siege) in zip(
+                    reassignations,
+                    zip(billets_a_reassigner.order_by('numero_siege'), sieges_libres)
+                ):
+                    ReassignationSiege.objects.create(
+                        voyage=voyage,
+                        billet=billet,
+                        ancien_siege=billet.numero_siege,
+                        nouveau_siege=nouveau_siege,
+                        effectuee_par=user,
+                    )
+                    billet.numero_siege = nouveau_siege
+                    billet.save(update_fields=['numero_siege', 'date_modification'])
+            elif preview_only:
+                return JsonResponse({'success': True, 'reassignations': []})
 
             voyage.vehicule = vehicule
         else:
             voyage.vehicule = None
 
-        # Sauvegarder en base de données
         voyage.save(update_fields=['chauffeur', 'convoyeur', 'vehicule', 'date_modification'])
 
         return JsonResponse({
@@ -483,6 +547,7 @@ def save_voyage_agents(request, pk):
             'chauffeur_nom': voyage.chauffeur.nom_complet if voyage.chauffeur else None,
             'convoyeur_nom': voyage.convoyeur.nom_complet if voyage.convoyeur else None,
             'vehicule_immatriculation': voyage.vehicule.immatriculation if voyage.vehicule else None,
+            'reassignations': reassignations,
         })
 
     except json.JSONDecodeError:
@@ -876,6 +941,31 @@ def terminer_voyage(request, pk):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def print_reassignations(request, pk):
+    """Page d'impression de la liste des réassignations de sièges pour un voyage."""
+    from .models import ReassignationSiege
+    voyage = get_object_or_404(Voyage.objects.select_related('gare', 'ligne', 'vehicule'), pk=pk)
+
+    user = request.user
+    if not user.has_global_access and user.gare:
+        if voyage.gare != user.gare:
+            from django.http import HttpResponseForbidden
+            return HttpResponseForbidden("Accès non autorisé")
+
+    reassignations = ReassignationSiege.objects.filter(voyage=voyage).select_related(
+        'billet', 'effectuee_par'
+    ).order_by('-date_reassignation', 'nouveau_siege')
+
+    return render(request, 'voyages/voyage_reassignations.html', {
+        'voyage': voyage,
+        'reassignations': reassignations,
+        'compagnie': Compagnie.get_instance(),
+        'date_impression': timezone.now(),
+        'print_mode': request.GET.get('print', '0') == '1',
+    })
 
 
 # ==================== GESTION DU REPORT DE BILLETS ====================

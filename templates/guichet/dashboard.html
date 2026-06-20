@@ -296,6 +296,7 @@
                 <th>Ligne</th>
                 <th>Véhicule</th>
                 <th>Remplissage</th>
+                <th>Recette Billets</th>
                 <th></th>
               </tr>
             </thead>
@@ -339,6 +340,13 @@
                         style="width:{{ fill_pct }}%"></div>
                     </div>
                     {% endwith %}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+                <td class="fw-semibold text-success" style="white-space:nowrap;">
+                  {% if voyage.recette_billets %}
+                    {{ voyage.recette_billets|floatformat:0 }} F
                   {% else %}
                     <span class="text-muted">—</span>
                   {% endif %}

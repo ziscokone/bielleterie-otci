@@ -311,7 +311,7 @@
             <div class="resume-item">
                 <span class="resume-label">
                     <i class="bi bi-graph-up-arrow me-1"></i>
-                    BÉNÉFICE NET
+                    RECETTE NET
                 </span>
                 <span class="resume-value {% if benefice_net_global >= 0 %}text-success-light{% else %}text-danger-light{% endif %}">
                     {{ benefice_net_global|floatformat:0|intcomma }} FCFA
@@ -373,7 +373,7 @@
                                 <td class="montant">{{ ligne_data.recette_bagages|floatformat:0|intcomma }}</td>
                             {% elif col == 'Total Dépenses' %}
                                 <td class="montant text-danger">{{ ligne_data.total_depenses|floatformat:0|intcomma }}</td>
-                            {% elif col == 'Bénéfice Net' %}
+                            {% elif col == 'Recette Net' %}
                                 <td class="montant text-success fw-bold">{{ ligne_data.benefice_net|floatformat:0|intcomma }}</td>
                             {% else %}
                                 {# Colonnes de dépenses dynamiques #}
@@ -400,7 +400,7 @@
                                 <td class="montant">{{ totaux.recette_bagages|floatformat:0|intcomma }}</td>
                             {% elif col == 'Total Dépenses' %}
                                 <td class="montant text-danger">{{ totaux.total_depenses|floatformat:0|intcomma }}</td>
-                            {% elif col == 'Bénéfice Net' %}
+                            {% elif col == 'Recette Net' %}
                                 <td class="montant text-success">{{ totaux.benefice_net|floatformat:0|intcomma }}</td>
                             {% else %}
                                 {# Totaux des colonnes de dépenses #}

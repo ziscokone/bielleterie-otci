@@ -511,7 +511,7 @@ class RapportParGareView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
         colonnes.extend(['Num Départ', 'Nb Pass.', 'Recette Billets', 'Recette Bagages'])
         colonnes.extend(sorted(list(types_depenses_presents)))
-        colonnes.extend(['Total Dépenses', 'Bénéfice Net'])
+        colonnes.extend(['Total Dépenses', 'Recette Net'])
 
         context['colonnes'] = colonnes
 
@@ -576,7 +576,7 @@ class RapportParGareView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                         row[col_name] = ligne_data['recette_bagages']
                     elif col_name == 'Total Dépenses':
                         row[col_name] = ligne_data['total_depenses']
-                    elif col_name == 'Bénéfice Net':
+                    elif col_name == 'Recette Net':
                         row[col_name] = ligne_data['benefice_net']
                     elif col_name in context['types_depenses_presents']:
                         row[col_name] = ligne_data['depenses'].get(col_name, Decimal('0'))

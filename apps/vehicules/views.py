@@ -797,7 +797,7 @@ class RentabiliteVehiculeView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
         # Colonnes dynamiques
         colonnes = ['Date', 'Gare', 'Ligne', 'N° Départ', 'Nb Pass.', 'Recette Billets', 'Recette Bagages']
         colonnes.extend(sorted(list(types_depenses_presents)))
-        colonnes.extend(['Total Dépenses', 'Bénéfice Net'])
+        colonnes.extend(['Total Dépenses', 'Recette Net'])
         context['colonnes'] = colonnes
 
         # Totaux par colonne

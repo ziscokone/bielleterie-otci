@@ -236,15 +236,28 @@
     {% endif %}
 
     <!-- Actions secondaires -->
+    {% if voyage.statut == 'termine' %}
     <a href="{% url 'voyages:voyage_bordereau' voyage.pk %}" class="btn-act-secondary" target="_blank">
       <i class="bi bi-file-earmark-text"></i>Bordereau
     </a>
+    {% else %}
+    <button type="button" class="btn-act-secondary" style="opacity:0.6; cursor:not-allowed;"
+            data-bs-toggle="modal" data-bs-target="#bordereauBloqueModal">
+      <i class="bi bi-file-earmark-text"></i>Bordereau
+    </button>
+    {% endif %}
     <a href="{% url 'voyages:voyage_liste_passagers' voyage.pk %}" class="btn-act-secondary" target="_blank">
       <i class="bi bi-list-ul"></i>Liste Passagers
     </a>
     <a href="{% url 'voyages:voyage_recap_destination' voyage.pk %}" class="btn-act-secondary" target="_blank">
       <i class="bi bi-geo-alt"></i>Recap Destination
     </a>
+    {% if voyage.reassignations.exists %}
+    <a href="{% url 'voyages:voyage_print_reassignations' voyage.pk %}" class="btn-act-secondary" target="_blank"
+       style="background:#e74c3c; color:white;">
+      <i class="bi bi-arrow-left-right"></i>Réassignations
+    </a>
+    {% endif %}
 
     <!-- Retour -->
     <a href="{% url 'voyages:voyage_list' %}" class="btn-act-retour">
@@ -529,6 +542,73 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                 <button type="button" class="btn btn-warning" id="saveAgentsBtn">
                     <i class="bi bi-save me-2"></i>Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Bordereau bloqué -->
+<div class="modal fade" id="bordereauBloqueModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Impression impossible
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="bi bi-lock-fill text-warning" style="font-size:2.5rem;"></i>
+                <p class="mt-3 mb-1 fw-bold">Le voyage n'est pas encore terminé.</p>
+                <p class="text-muted small">Le bordereau ne peut être imprimé qu'après avoir marqué le voyage comme <strong>Terminé</strong>.</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmation Réassignation -->
+<div class="modal fade" id="reassignationModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-arrow-left-right me-2"></i>Réassignation automatique de sièges
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Le véhicule sélectionné a une capacité inférieure. Les passagers suivants
+                    seront <strong>automatiquement déplacés</strong> vers des sièges libres.
+                </div>
+                <table class="table table-bordered table-sm">
+                    <thead class="table-danger">
+                        <tr>
+                            <th>Passager</th>
+                            <th>Téléphone</th>
+                            <th class="text-center">Ancien siège</th>
+                            <th class="text-center"></th>
+                            <th class="text-center">Nouveau siège</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reassignationTableBody"></tbody>
+                </table>
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-printer me-2"></i>
+                    Après confirmation, la liste s'imprimera automatiquement pour que vous puissiez
+                    identifier ces passagers.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelReassignationBtn">
+                    <i class="bi bi-x me-1"></i>Annuler
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmReassignationBtn">
+                    <i class="bi bi-check-lg me-1"></i>Confirmer et enregistrer
                 </button>
             </div>
         </div>
@@ -1014,20 +1094,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     vehiculeSelect.innerHTML = '<option value="">-- Sélectionner un véhicule --</option>';
 
                     if (data.vehicules && data.vehicules.length > 0) {
+                        window._vehiculesData = data.vehicules;
                         data.vehicules.forEach(vehicule => {
                             const option = document.createElement('option');
                             option.value = vehicule.id;
-                            option.textContent = `${vehicule.immatriculation} - ${vehicule.modele_nom} (${vehicule.capacite} places)`;
+                            option.dataset.capacite = vehicule.capacite;
+                            option.dataset.needsReassignment = vehicule.needs_reassignment ? 'true' : 'false';
+                            const badge = vehicule.needs_reassignment ? ' ⚠ réassignation' : '';
+                            option.textContent = `${vehicule.immatriculation} - ${vehicule.modele_nom} (${vehicule.capacite} places)${badge}`;
                             if (data.voyage.vehicule_id === vehicule.id) {
                                 option.selected = true;
                             }
                             vehiculeSelect.appendChild(option);
                         });
 
-                        // Afficher l'info de capacité minimale si pertinent
-                        if (data.capacite_minimale > 0) {
+                        if (data.nb_billets > 0) {
                             document.getElementById('capacite_info').textContent =
-                                `(Capacité minimale requise : ${data.capacite_minimale} places)`;
+                                `(${data.nb_billets} billet(s) vendu(s) — siège max : ${data.max_siege})`;
                         }
                     } else {
                         vehiculeSelect.innerHTML = '<option value="">Aucun véhicule disponible</option>';
@@ -1043,27 +1126,28 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // Fonction pour enregistrer les agents sélectionnés
-    document.getElementById('saveAgentsBtn').addEventListener('click', function() {
-        const saveBtn = this;
-        const chauffeurId = document.getElementById('chauffeur_id').value;
-        const convoyeurId = document.getElementById('convoyeur_id').value;
-        const vehiculeId = document.getElementById('vehicule_id').value;
+    // Stockage temporaire des données pour la sauvegarde
+    let pendingSaveData = null;
 
-        // Désactiver le bouton pendant l'enregistrement
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enregistrement...';
+    // Vérification au changement de véhicule : signaler si réassignation nécessaire
+    document.getElementById('vehicule_id').addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        const capaciteInfo = document.getElementById('capacite_info');
+        if (selected && selected.dataset.needsReassignment === 'true') {
+            capaciteInfo.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Des sièges seront réassignés automatiquement.</span>';
+        } else {
+            capaciteInfo.textContent = selected && selected.dataset.capacite
+                ? `(${selected.dataset.capacite} places)`
+                : '';
+        }
+    });
 
-        // Récupérer le token CSRF
+    function doSaveAgents(chauffeurId, convoyeurId, vehiculeId, saveBtn) {
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        // Envoyer la requête AJAX
         fetch(`/voyages/${voyageId}/agents/save/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
             body: JSON.stringify({
                 chauffeur_id: chauffeurId || null,
                 convoyeur_id: convoyeurId || null,
@@ -1073,9 +1157,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showAgentsMessage('Agents enregistrés avec succès !', 'success');
-
-                // Mettre à jour l'affichage des agents actuels
                 document.getElementById('current_chauffeur').innerHTML =
                     data.chauffeur_nom || '<em class="text-muted">Non assigné</em>';
                 document.getElementById('current_convoyeur').innerHTML =
@@ -1085,23 +1166,114 @@ document.addEventListener('DOMContentLoaded', function() {
                         ? `${data.vehicule_immatriculation} <span class="text-success">(mis à jour)</span>`
                         : '<em class="text-muted">Non assigné</em>';
 
-                // Recharger la page après 1 seconde pour mettre à jour les informations
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
+                // Si des réassignations ont eu lieu → ouvrir la page d'impression
+                if (data.reassignations && data.reassignations.length > 0) {
+                    bootstrap.Modal.getInstance(document.getElementById('agentsModal')).hide();
+                    window.open(`/voyages/${voyageId}/reassignations/imprimer/`, '_blank');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    showAgentsMessage('Agents enregistrés avec succès !', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                }
             } else {
                 showAgentsMessage(data.error || 'Erreur lors de l\'enregistrement', 'danger');
             }
         })
-        .catch(error => {
-            console.error('Erreur:', error);
-            showAgentsMessage('Erreur de connexion', 'danger');
-        })
+        .catch(() => showAgentsMessage('Erreur de connexion', 'danger'))
         .finally(() => {
-            // Réactiver le bouton
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="bi bi-save me-2"></i>Enregistrer';
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="bi bi-save me-2"></i>Enregistrer';
+            }
         });
+    }
+
+    // Fonction pour enregistrer les agents sélectionnés
+    document.getElementById('saveAgentsBtn').addEventListener('click', function() {
+        const saveBtn = this;
+        const chauffeurId = document.getElementById('chauffeur_id').value;
+        const convoyeurId = document.getElementById('convoyeur_id').value;
+        const vehiculeId = document.getElementById('vehicule_id').value;
+
+        // Vérifier si le véhicule sélectionné nécessite une réassignation
+        const vehiculeSelect = document.getElementById('vehicule_id');
+        const selectedOption = vehiculeSelect.options[vehiculeSelect.selectedIndex];
+        const needsReassignment = selectedOption && selectedOption.dataset.needsReassignment === 'true';
+
+        if (needsReassignment && vehiculeId) {
+            // Charger la prévisualisation des réassignations depuis les données déjà disponibles
+            const vehiculeData = window._vehiculesData ? window._vehiculesData.find(v => v.id == vehiculeId) : null;
+            pendingSaveData = { chauffeurId, convoyeurId, vehiculeId };
+
+            // Construire le tableau de prévisualisation (données chargées depuis serveur)
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Vérification...';
+
+            // Appel save direct — la réassignation est faite côté serveur et retournée
+            fetch(`/voyages/${voyageId}/agents/save/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({
+                    chauffeur_id: chauffeurId || null,
+                    convoyeur_id: convoyeurId || null,
+                    vehicule_id: vehiculeId || null,
+                    preview_only: true
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="bi bi-save me-2"></i>Enregistrer';
+                if (data.success && data.reassignations && data.reassignations.length > 0) {
+                    // Remplir la modale de confirmation
+                    const tbody = document.getElementById('reassignationTableBody');
+                    tbody.innerHTML = '';
+                    data.reassignations.forEach(r => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><strong>${r.client_nom}</strong></td>
+                                <td>${r.client_telephone}</td>
+                                <td class="text-center text-danger fw-bold" style="font-size:1.1rem;text-decoration:line-through;">${r.ancien_siege}</td>
+                                <td class="text-center text-muted">→</td>
+                                <td class="text-center text-success fw-bold" style="font-size:1.3rem;">${r.nouveau_siege}</td>
+                            </tr>`;
+                    });
+                    bootstrap.Modal.getInstance(document.getElementById('agentsModal')).hide();
+                    new bootstrap.Modal(document.getElementById('reassignationModal')).show();
+                } else if (data.success) {
+                    // Pas de réassignation nécessaire finalement
+                    doSaveAgents(chauffeurId, convoyeurId, vehiculeId, null);
+                } else {
+                    showAgentsMessage(data.error || 'Erreur', 'danger');
+                }
+            })
+            .catch(() => {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="bi bi-save me-2"></i>Enregistrer';
+                showAgentsMessage('Erreur de connexion', 'danger');
+            });
+        } else {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enregistrement...';
+            doSaveAgents(chauffeurId, convoyeurId, vehiculeId, saveBtn);
+        }
+    });
+
+    // Bouton annuler la réassignation
+    document.getElementById('cancelReassignationBtn').addEventListener('click', function() {
+        bootstrap.Modal.getInstance(document.getElementById('reassignationModal')).hide();
+        new bootstrap.Modal(document.getElementById('agentsModal')).show();
+    });
+
+    // Bouton confirmer la réassignation
+    document.getElementById('confirmReassignationBtn').addEventListener('click', function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enregistrement...';
+        if (pendingSaveData) {
+            doSaveAgents(pendingSaveData.chauffeurId, pendingSaveData.convoyeurId, pendingSaveData.vehiculeId, null);
+        }
     });
 
     // Fonction pour afficher un message dans le modal

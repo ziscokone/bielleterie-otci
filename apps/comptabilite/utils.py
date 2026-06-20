@@ -125,7 +125,7 @@ def export_rapport_gare_excel(donnees, filtres):
         'Recette Billets': 15,
         'Recette Bagages': 15,
         'Total Dépenses': 15,
-        'Bénéfice Net': 15,
+        'Recette Net': 15,
     }
 
     for idx, col_name in enumerate(filtres['colonnes'], start=1):
@@ -141,7 +141,7 @@ def export_rapport_gare_excel(donnees, filtres):
             value = ligne_data.get(col_name, 0)
 
             # Formatage selon le type de colonne
-            if col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Bénéfice Net'] or 'Carburant' in col_name or 'Frais' in col_name or 'Ration' in col_name or 'Réparation' in col_name or 'Divers' in col_name:
+            if col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Recette Net'] or 'Carburant' in col_name or 'Frais' in col_name or 'Ration' in col_name or 'Réparation' in col_name or 'Divers' in col_name:
                 # Colonnes monétaires
                 cell.value = int(value) if value else 0
                 cell.number_format = '#,##0'
@@ -175,7 +175,7 @@ def export_rapport_gare_excel(donnees, filtres):
             elif col_name == 'Nb Pass.':
                 cell.value = sum(int(d.get(col_name, 0)) for d in donnees)
                 cell.alignment = Alignment(horizontal='center')
-            elif col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Bénéfice Net'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
+            elif col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Recette Net'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
                 cell.value = sum(int(d.get(col_name, 0)) for d in donnees)
                 cell.number_format = '#,##0'
                 cell.alignment = Alignment(horizontal='right')
@@ -201,7 +201,7 @@ def export_rapport_gare_excel(donnees, filtres):
         row += 1
         ws.merge_cells(f'A{row}:C{row}')
         cell = ws[f'A{row}']
-        cell.value = "VERSEMENT (Bénéfice Net):"
+        cell.value = "VERSEMENT (Recette Net):"
         cell.font = Font(bold=True, size=12)
         cell.alignment = Alignment(horizontal='right')
 
@@ -366,7 +366,7 @@ def export_rapport_gare_pdf(donnees, filtres):
             # Mapper "N° Départ" vers "Num Départ" pour récupérer la bonne valeur
             data_key = 'Num Départ' if col_name == 'N° Départ' else col_name
             value = ligne_data.get(data_key, 0)
-            if col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Bénéfice Net'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
+            if col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Recette Net'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
                 row.append(f"{format_montant(value)} FCFA")
             else:
                 row.append(str(value))
@@ -382,7 +382,7 @@ def export_rapport_gare_pdf(donnees, filtres):
                 total_row.append("TOTAL")
             elif col_name == 'Nb Pass.':
                 total_row.append(str(sum(int(d.get('Nb Pass.', 0)) for d in donnees)))
-            elif col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Bénéfice Net'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
+            elif col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Recette Net'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
                 # Mapper "N° Départ" vers "Num Départ" pour les données
                 data_key = 'Num Départ' if col_name == 'N° Départ' else col_name
                 total_row.append(f"{format_montant(sum(int(d.get(data_key, 0)) for d in donnees))} FCFA")
@@ -405,7 +405,7 @@ def export_rapport_gare_pdf(donnees, filtres):
         'Réparation': 2.0*cm,
         'Divers': 2.0*cm,
         'Total Dépenses': 2.2*cm,
-        'Bénéfice Net': 2.2*cm,
+        'Recette Net': 2.2*cm,
     }
 
     # Appliquer les largeurs selon l'ordre des colonnes
@@ -453,7 +453,7 @@ def export_rapport_gare_pdf(donnees, filtres):
 
     # Aligner les montants à droite
     for col_idx, col_name in enumerate(headers):
-        if col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Bénéfice Net', 'Nb Pass.'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
+        if col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Recette Net', 'Nb Pass.'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
             table_style.add('ALIGN', (col_idx, 1), (col_idx, -1), 'RIGHT')
         if col_name in ['Num Départ', 'N° Départ']:
             table_style.add('ALIGN', (col_idx, 1), (col_idx, -1), 'CENTER')
@@ -468,7 +468,7 @@ def export_rapport_gare_pdf(donnees, filtres):
     summary_data = [
         [
             f"CHARGE GARE (Total Dépenses)  |  {format_montant(filtres['total_charge'])} FCFA",
-            f"VERSEMENT (Bénéfice Net)  |  {format_montant(filtres['total_versement'])} FCFA"
+            f"VERSEMENT (Recette Net)  |  {format_montant(filtres['total_versement'])} FCFA"
         ]
     ]
 

@@ -9,7 +9,7 @@
         @media print {
             body { margin: 0; }
             .no-print { display: none !important; }
-            @page { margin: 1cm; size: A4 portrait; }
+            @page { margin: 0; size: A4 portrait; }
 
             /* Empêcher le tfoot de se répéter sur chaque page */
             tfoot {
@@ -39,7 +39,6 @@
         .page {
             background: white;
             width: 21cm;
-            min-height: 29.7cm;
             margin: 1cm auto;
             padding: 1cm;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -48,6 +47,7 @@
         @media print {
             .page {
                 margin: 0;
+                padding: 1cm;
                 box-shadow: none;
                 width: 100%;
             }
@@ -346,7 +346,7 @@
                     <td class="text-center">{{ forloop.counter }}</td>
                     <td><strong>{{ billet.client_nom }}</strong></td>
                     <td>{{ billet.client_telephone }}</td>
-                    <td class="text-center"><strong>{{ billet.numero_siege }}</strong></td>
+                    <td class="text-center"><strong style="font-size: 13pt;">{{ billet.numero_siege }}</strong></td>
                     <td>
                         {% if billet.destination %}
                             {{ billet.destination.ville_arrivee }}
