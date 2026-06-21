@@ -16,12 +16,12 @@
                 <div class="card-body">
                     <p class="mb-3">
                         Êtes-vous sûr de vouloir supprimer le véhicule
-                        <strong>{{ object.immatriculation }}</strong> ?
+                        <strong>{{ object.display_immat }}</strong> ?
                     </p>
 
                     <div class="alert alert-info">
                         <ul class="mb-0">
-                            <li><strong>Immatriculation:</strong> {{ object.immatriculation }}</li>
+                            <li><strong>Immatriculation:</strong> {{ object.display_immat }}</li>
                             <li><strong>Modèle:</strong> {{ object.modele.marque }} {{ object.modele.nom }}</li>
                             <li><strong>Capacité:</strong> {{ object.modele.capacite }} places</li>
                             <li><strong>Statut:</strong>

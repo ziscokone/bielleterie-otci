@@ -32,4 +32,8 @@ urlpatterns = [
     path('voyages/<int:voyage_id>/disposition/', views.get_disposition_voyage, name='get_disposition_voyage'),
     # Dashboard des reports
     path('dashboard/reports/', views.DashboardReportsView.as_view(), name='dashboard_reports'),
+    # Gestion des remboursements
+    path('billets/<int:billet_id>/remboursement/demander/', views.demander_remboursement, name='demander_remboursement'),
+    path('remboursements/<int:demande_id>/traiter/', views.traiter_remboursement, name='traiter_remboursement'),
+    path('remboursements/', views.ListeRemboursementsView.as_view(), name='liste_remboursements'),
 ]

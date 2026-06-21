@@ -162,6 +162,13 @@ class Vehicule(models.Model):
     ]
 
     # Informations générales
+    numero_ordre = models.CharField(
+        max_length=10,
+        unique=True,
+        blank=True,
+        verbose_name="N° d'ordre",
+        help_text="Numéro d'arrivage du véhicule (ex: 01, 05, 30). Unique."
+    )
     immatriculation = models.CharField(
         max_length=20,
         unique=True,
@@ -216,6 +223,23 @@ class Vehicule(models.Model):
         verbose_name="Type de boîte"
     )
 
+    # Documents administratifs
+    numero_carte_grise = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="N° Carte Grise"
+    )
+    patente = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Patente"
+    )
+    carte_stationnement = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Carte de Stationnement"
+    )
+
     # Documents & conformité légale
     compagnie_assurance = models.CharField(
         max_length=100,
@@ -257,7 +281,14 @@ class Vehicule(models.Model):
         ordering = ['immatriculation']
 
     def __str__(self):
-        return f"{self.immatriculation} ({self.modele.nom})"
+        return f"{self.display_immat} ({self.modele.nom})"
+
+    @property
+    def display_immat(self):
+        """Retourne l'immatriculation avec le numéro d'ordre entre parenthèses si défini."""
+        if self.numero_ordre:
+            return f"{self.immatriculation} ({self.numero_ordre})"
+        return self.immatriculation
 
     @property
     def capacite(self):

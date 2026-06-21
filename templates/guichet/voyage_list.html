@@ -353,7 +353,7 @@
                         <td style="color:#6b7280;font-size:12px;">{{ voyage.gare.code }}</td>
                         <td>
                             {% if voyage.vehicule %}
-                                <div class="v-assigné">{{ voyage.vehicule.immatriculation }}</div>
+                                <div class="v-assigné">{{ voyage.vehicule.display_immat }}</div>
                                 <div class="v-sub">{{ voyage.vehicule.modele.nom }}</div>
                             {% else %}
                                 <span class="v-non-assigne"><i class="bi bi-exclamation-circle me-1"></i>Non assigné</span>

@@ -273,7 +273,7 @@
             <td class="text-center fw-semibold">{{ v.voyage.heure_depart|time:"H:i" }}</td>
             <td>
               {% if v.voyage.vehicule %}
-                <span class="fw-semibold">{{ v.voyage.vehicule.immatriculation }}</span>
+                <span class="fw-semibold">{{ v.voyage.vehicule.display_immat }}</span>
               {% else %}
                 <span class="text-muted fst-italic" style="font-size:12px">Non assigné</span>
               {% endif %}

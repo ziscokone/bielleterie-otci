@@ -316,7 +316,7 @@
                 <td>{{ voyage.ligne }}</td>
                 <td>
                   {% if voyage.vehicule %}
-                    <span class="fw-semibold">{{ voyage.vehicule.immatriculation }}</span>
+                    <span class="fw-semibold">{{ voyage.vehicule.display_immat }}</span>
                   {% else %}
                     <span class="text-muted fst-italic" style="font-size:12px">Non assigné</span>
                   {% endif %}

@@ -141,9 +141,18 @@
     border-radius: 8px; padding: 3px 10px;
     font-size: 12px; font-weight: 700; font-family: monospace;
   }
-  .statut-paye    { background: #dcfce7; color: #166534; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
-  .statut-reserve { background: #fef3c7; color: #92400e; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
-  .statut-reporte { background: #dbeafe; color: #1e40af; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+  .statut-paye      { background: #dcfce7; color: #166534; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+  .statut-reserve   { background: #fef3c7; color: #92400e; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+  .statut-reporte   { background: #dbeafe; color: #1e40af; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+  .statut-rembourse { background: #fee2e2; color: #991b1b; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+
+  .btn-rembourser {
+    width: 30px; height: 30px; border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; border: 1px solid #e5e7eb; background: #fff; color: #6b7280;
+    transition: all 0.15s; cursor: pointer;
+  }
+  .btn-rembourser:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
 
   .btn-print {
     width: 30px; height: 30px; border-radius: 7px;
@@ -185,7 +194,7 @@
           <span><i class="bi bi-clock me-1"></i>{{ voyage.heure_depart|time:"H:i" }}</span>
           <span>
             <i class="bi bi-truck me-1"></i>
-            {% if voyage.vehicule %}{{ voyage.vehicule.immatriculation }}{% else %}<em>Non assigné</em>{% endif %}
+            {% if voyage.vehicule %}{{ voyage.vehicule.display_immat }}{% else %}<em>Non assigné</em>{% endif %}
           </span>
           <span>
             <i class="bi bi-geo-alt me-1"></i>{{ voyage.gare.nom }}
@@ -375,6 +384,8 @@
                 </span>
               {% elif billet.statut == 'reporte' %}
                 <span class="statut-reporte"><i class="bi bi-arrow-repeat me-1"></i>Reporté</span>
+              {% elif billet.statut == 'rembourse' %}
+                <span class="statut-rembourse"><i class="bi bi-cash-coin me-1"></i>Remboursé</span>
               {% else %}
                 <span class="statut-reserve"><i class="bi bi-bookmark me-1"></i>Réservé</span>
               {% endif %}
@@ -396,6 +407,20 @@
                         title="Reporter ce billet">
                   <i class="bi bi-arrow-repeat"></i>
                 </button>
+                {% if billet.demande_remboursement and billet.demande_remboursement.statut == 'en_attente' %}
+                <span class="btn-rembourser" style="cursor:default;opacity:0.6;" title="Remboursement en attente d'approbation">
+                  <i class="bi bi-hourglass-split text-warning"></i>
+                </span>
+                {% else %}
+                <button type="button" class="btn-rembourser btn-demander-remboursement"
+                        data-billet-id="{{ billet.pk }}"
+                        data-billet-numero="{{ billet.numero }}"
+                        data-client-nom="{{ billet.client_nom }}"
+                        data-montant="{{ billet.montant }}"
+                        title="Demander un remboursement">
+                  <i class="bi bi-cash-coin"></i>
+                </button>
+                {% endif %}
                 {% endif %}
               </div>
             </td>
@@ -526,7 +551,7 @@
                             <strong>Véhicule :</strong>
                             <span id="current_vehicule">
                                 {% if voyage.vehicule %}
-                                    {{ voyage.vehicule.immatriculation }} ({{ voyage.vehicule.modele.nom }} - {{ voyage.vehicule.capacite }} places)
+                                    {{ voyage.vehicule.display_immat }} ({{ voyage.vehicule.modele.nom }} - {{ voyage.vehicule.capacite }} places)
                                 {% else %}
                                     <em class="text-muted">Non assigné</em>
                                 {% endif %}
@@ -830,21 +855,43 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Attention :</strong> Vous êtes sur le point de marquer ce départ comme terminé.
+                <p class="mb-2"><strong>Ligne :</strong> {{ voyage.ligne.nom }} &nbsp;|&nbsp; <strong>Date :</strong> {{ voyage.date_depart|date:"d/m/Y" }} à {{ voyage.heure_depart|time:"H:i" }}</p>
+
+                <!-- Checklist avant terminaison -->
+                <div class="border rounded p-3 mb-3" style="background:#f8f9fa;">
+                    <p class="fw-bold mb-2" style="font-size:13px;color:#374151;">Vérifiez avant de terminer :</p>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-success">{{ nb_billets_payes }}</span>
+                        <span style="font-size:13px;">billet(s) payé(s)</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-2 {% if nb_billets_reserves > 0 %}text-warning fw-semibold{% endif %}">
+                        {% if nb_billets_reserves > 0 %}<i class="bi bi-exclamation-triangle-fill text-warning"></i>{% endif %}
+                        <span class="badge {% if nb_billets_reserves > 0 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ nb_billets_reserves }}</span>
+                        <span style="font-size:13px;">réservation(s) non payée(s) encore en attente</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 {% if nb_remboursements_en_attente > 0 %}text-danger fw-semibold{% endif %}">
+                        {% if nb_remboursements_en_attente > 0 %}<i class="bi bi-exclamation-triangle-fill text-danger"></i>{% endif %}
+                        <span class="badge {% if nb_remboursements_en_attente > 0 %}bg-danger{% else %}bg-secondary{% endif %}">{{ nb_remboursements_en_attente }}</span>
+                        <span style="font-size:13px;">demande(s) de remboursement en attente</span>
+                    </div>
                 </div>
-                <p>Êtes-vous sûr de vouloir terminer ce départ ?</p>
-                <p class="mb-0"><strong>Ligne :</strong> {{ voyage.ligne.nom }}</p>
-                <p class="mb-0"><strong>Date :</strong> {{ voyage.date_depart|date:"d/m/Y" }} à {{ voyage.heure_depart|time:"H:i" }}</p>
+
+                <div class="alert alert-danger mb-2 py-2">
+                    <i class="bi bi-lock-fill me-2"></i>
+                    <strong>Après avoir terminé ce voyage :</strong>
+                    <ul class="mb-0 mt-1 ps-3" style="font-size:12px;">
+                        <li>Aucun remboursement ne sera plus possible</li>
+                        <li>Aucun report de billet ne sera plus possible</li>
+                    </ul>
+                </div>
 
                 <!-- Message de retour -->
-                <div id="terminerVoyageMessage" class="alert d-none mt-3"></div>
+                <div id="terminerVoyageMessage" class="alert d-none mt-2"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                 <button type="button" class="btn btn-success" id="confirmTerminerBtn">
-                    <i class="bi bi-check-circle me-2"></i>Confirmer
+                    <i class="bi bi-check-circle me-2"></i>Oui, terminer le voyage
                 </button>
             </div>
         </div>
@@ -933,6 +980,45 @@
     </div>
 </div>
 
+<!-- Modal Demande de Remboursement -->
+<div class="modal fade" id="rembourserBilletModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-cash-coin me-2"></i>Demande de Remboursement
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="border rounded p-3 mb-3" style="background:#f8f9fa;">
+                    <p class="mb-1"><strong>Billet :</strong> <span id="remb_billet_numero"></span></p>
+                    <p class="mb-1"><strong>Client :</strong> <span id="remb_client_nom"></span></p>
+                    <p class="mb-0"><strong>Montant :</strong> <span id="remb_montant"></span> FCFA</p>
+                </div>
+                <div class="mb-3">
+                    <label for="remb_motif" class="form-label fw-bold">
+                        <i class="bi bi-chat-left-text me-1"></i>Motif du remboursement *
+                    </label>
+                    <textarea class="form-control" id="remb_motif" rows="3" required
+                              placeholder="Ex: Client empêché de voyager, Urgence familiale..."></textarea>
+                </div>
+                <div class="alert alert-info small mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    La demande sera transmise à votre chef de gare pour approbation.
+                </div>
+                <div id="rembourserMessage" class="alert d-none mt-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmRembourserBtn">
+                    <i class="bi bi-send me-2"></i>Envoyer la demande
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -978,8 +1064,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
         `;
 
+        // Message bas de ticket
+        const msgHtml = billet.message_bas_ticket
+            ? `<div class="ticket-message-bas">${billet.message_bas_ticket}</div>`
+            : '';
+
         // Ajouter la souche sur le duplicata si activé
         if (billet.utiliser_souche) {
+            // Message AVANT la ligne de découpe (reste sur la partie client)
+            if (msgHtml) html += msgHtml;
             html += `
                     <!-- LIGNE DE DÉCOUPE -->
                     <div class="ticket-separator-cut">✂ - - - - - - - - - - - - - - - - - - - - - - ✂</div>
@@ -1010,6 +1103,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
             `;
+        } else {
+            // Sans souche : message tout en bas
+            if (msgHtml) html += msgHtml;
         }
 
         html += `
@@ -2286,11 +2382,71 @@ document.addEventListener('DOMContentLoaded', function() {
         messageDiv.textContent = message;
         messageDiv.classList.remove('d-none');
 
-        // Masquer le message après 5 secondes sauf pour les succès
         if (type !== 'success') {
             setTimeout(() => {
                 messageDiv.classList.add('d-none');
             }, 5000);
+        }
+    }
+
+    // ========== GESTION DES REMBOURSEMENTS ==========
+
+    const rembourserModal = new bootstrap.Modal(document.getElementById('rembourserBilletModal'));
+    let currentRembourseBilletId = null;
+
+    document.querySelectorAll('.btn-demander-remboursement').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentRembourseBilletId = this.dataset.billetId;
+            document.getElementById('remb_billet_numero').textContent = this.dataset.billetNumero;
+            document.getElementById('remb_client_nom').textContent = this.dataset.clientNom;
+            document.getElementById('remb_montant').textContent = Number(this.dataset.montant).toLocaleString('fr-FR');
+            document.getElementById('remb_motif').value = '';
+            document.getElementById('rembourserMessage').classList.add('d-none');
+            rembourserModal.show();
+        });
+    });
+
+    document.getElementById('confirmRembourserBtn').addEventListener('click', function() {
+        const motif = document.getElementById('remb_motif').value.trim();
+        if (!motif) {
+            showRembourserMessage('Le motif est obligatoire', 'warning');
+            return;
+        }
+
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Envoi...';
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(`/voyages/billets/${currentRembourseBilletId}/remboursement/demander/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ motif })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showRembourserMessage(data.message, 'success');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showRembourserMessage(data.error || 'Erreur', 'danger');
+            }
+        })
+        .catch(() => showRembourserMessage('Erreur de connexion', 'danger'))
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-send me-2"></i>Envoyer la demande';
+        });
+    });
+
+    function showRembourserMessage(message, type) {
+        const div = document.getElementById('rembourserMessage');
+        div.className = `alert alert-${type}`;
+        div.textContent = message;
+        div.classList.remove('d-none');
+        if (type !== 'success') {
+            setTimeout(() => div.classList.add('d-none'), 5000);
         }
     }
 });

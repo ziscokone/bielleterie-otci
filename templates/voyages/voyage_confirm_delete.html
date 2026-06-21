@@ -22,7 +22,7 @@
                             <li><strong>Ligne:</strong> {{ object.ligne.nom }}</li>
                             <li><strong>Destination:</strong> {{ object.destination.ville }}</li>
                             <li><strong>Gare:</strong> {{ object.gare.nom }}</li>
-                            {% if object.vehicule %}<li><strong>Véhicule:</strong> {{ object.vehicule.immatriculation }}</li>{% endif %}
+                            {% if object.vehicule %}<li><strong>Véhicule:</strong> {{ object.vehicule.display_immat }}</li>{% endif %}
                         </ul>
                     </div>
 

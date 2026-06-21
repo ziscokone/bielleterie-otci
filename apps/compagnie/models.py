@@ -22,6 +22,11 @@ class Compagnie(models.Model):
         verbose_name="Imprimer avec souche",
         help_text="Si activé, chaque ticket payé sera imprimé avec une souche détachable pour la compagnie"
     )
+    message_bas_ticket = models.TextField(
+        blank=True,
+        verbose_name="Message bas de ticket",
+        help_text="Message affiché au bas du ticket client. Ex: Soyez à la gare 30 min avant le départ. BON VOYAGE !"
+    )
     date_creation = models.DateTimeField(auto_now_add=True)
     date_modification = models.DateTimeField(auto_now=True)
 

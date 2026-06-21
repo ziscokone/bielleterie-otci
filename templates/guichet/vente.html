@@ -30,7 +30,7 @@
                         {% if voyage.vehicule %}
                         <span>
                             <i class="bi bi-truck me-1"></i>
-                            {{ voyage.vehicule.immatriculation }}
+                            {{ voyage.vehicule.display_immat }}
                         </span>
                         {% endif %}
                     </div>
@@ -727,8 +727,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
 
+            // Message bas de ticket
+            const msgHtml = billet.message_bas_ticket
+                ? `<div class="ticket-message-bas">${billet.message_bas_ticket}</div>`
+                : '';
+
             // Ajouter la souche si activé ET billet payé
             if (billet.utiliser_souche && billet.statut === 'paye') {
+                // Message AVANT la ligne de découpe (reste sur la partie client)
+                if (msgHtml) html += msgHtml;
                 html += `
                 <!-- LIGNE DE DÉCOUPE -->
                 <div class="ticket-separator-cut">✂ - - - - - - - - - - - - - - - - - - - - - - ✂</div>
@@ -759,6 +766,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 `;
+            } else {
+                // Sans souche : message tout en bas
+                if (msgHtml) html += msgHtml;
             }
 
             html += `</div>`;
@@ -800,8 +810,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
 
+            // Message bas de ticket
+            const msgHtmlModal = billet.message_bas_ticket
+                ? `<div class="ticket-message-bas">${billet.message_bas_ticket}</div>`
+                : '';
+
             // Ajouter la souche si activé ET billet payé
             if (billet.utiliser_souche && billet.statut === 'paye') {
+                // Message AVANT la ligne de découpe (reste sur la partie client)
+                if (msgHtmlModal) html += msgHtmlModal;
                 html += `
                 <!-- LIGNE DE DÉCOUPE -->
                 <div class="ticket-separator-cut">✂ - - - - - - - - - - - - - - - - - - - - - - ✂</div>
@@ -832,6 +849,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 `;
+            } else {
+                // Sans souche : message tout en bas
+                if (msgHtmlModal) html += msgHtmlModal;
             }
 
             html += `</div>`;

@@ -200,7 +200,7 @@
             </div>
             <div class="info-row">
                 <span class="info-label">Véhicule :</span>
-                <span>{% if voyage.vehicule %}{{ voyage.vehicule.immatriculation }} ({{ voyage.vehicule.capacite }} places){% else %}Non assigné{% endif %}</span>
+                <span>{% if voyage.vehicule %}{{ voyage.vehicule.display_immat }} ({{ voyage.vehicule.capacite }} places){% else %}Non assigné{% endif %}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Gare :</span>

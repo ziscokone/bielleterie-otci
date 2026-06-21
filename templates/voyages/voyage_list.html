@@ -81,7 +81,7 @@
                                     <td>{{ voyage.ligne.ville_arrivee }}</td>
                                     <td>
                                         {% if voyage.vehicule %}
-                                            {{ voyage.vehicule.immatriculation }}
+                                            {{ voyage.vehicule.display_immat }}
                                         {% else %}
                                             <span class="text-muted">—</span>
                                         {% endif %}

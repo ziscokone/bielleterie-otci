@@ -116,7 +116,7 @@ textarea.form-control { resize: vertical; min-height: 70px; }
             </h4>
             {% if form.instance.pk %}
             <div class="d-flex gap-2 mt-2 flex-wrap">
-                <span class="rep-chip"><i class="bi bi-bus-front"></i>{{ form.instance.vehicule.immatriculation }}</span>
+                <span class="rep-chip"><i class="bi bi-bus-front"></i>{{ form.instance.vehicule.display_immat }}</span>
                 <span class="rep-chip">
                     {% if form.instance.statut == 'terminee' %}<i class="bi bi-check-circle"></i> Terminée
                     {% elif form.instance.statut == 'en_cours' %}<i class="bi bi-hourglass-split"></i> En cours

@@ -675,6 +675,23 @@ a:hover {
     margin: 2mm 0;
 }
 
+/* Message bas de ticket (côté client) */
+.ticket-message-bas {
+    margin-top: 5mm;
+    padding: 2.5mm 3mm;
+    border-top: 1.5px dashed #aaa;
+    border-bottom: 1.5px dashed #aaa;
+    font-size: 7pt;
+    font-weight: bold;
+    color: #555;
+    text-align: center;
+    font-style: italic;
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.6;
+    white-space: pre-line;
+    letter-spacing: 0.2px;
+}
+
 /* Conteneur de la souche */
 .ticket-souche {
     position: relative;
@@ -771,6 +788,15 @@ a:hover {
     .ticket-preview.ticket-duplicata .ticket-content {
         width: 100% !important;
         box-sizing: border-box !important;
+    }
+
+    /* Message bas de ticket */
+    .ticket-message-bas {
+        color: #555 !important;
+        font-family: Georgia, 'Times New Roman', serif !important;
+        font-style: italic !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
     /* Styles d'impression pour la souche */

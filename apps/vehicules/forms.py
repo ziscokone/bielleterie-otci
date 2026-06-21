@@ -79,10 +79,12 @@ class VehiculeForm(forms.ModelForm):
         model = Vehicule
         fields = [
             # Informations générales
-            'modele', 'immatriculation', 'actif', 'notes',
+            'numero_ordre', 'modele', 'immatriculation', 'actif', 'notes',
             # Caractéristiques techniques
             'numero_chassis', 'annee_fabrication', 'date_mise_circulation',
             'type_carburant', 'type_boite', 'kilometrage_actuel',
+            # Documents administratifs
+            'numero_carte_grise', 'patente', 'carte_stationnement',
             # Documents & conformité légale
             'compagnie_assurance', 'date_expiration_assurance',
             'date_expiration_visite_technique', 'date_expiration_carte_grise',
@@ -90,6 +92,10 @@ class VehiculeForm(forms.ModelForm):
         ]
         widgets = {
             # Informations générales
+            'numero_ordre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: 01, 05, 30'
+            }),
             'modele': forms.Select(attrs={
                 'class': 'form-select',
             }),
@@ -131,6 +137,19 @@ class VehiculeForm(forms.ModelForm):
                 'placeholder': 'Ex: 150000',
                 'min': '0'
             }),
+            # Documents administratifs
+            'numero_carte_grise': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'N° de la carte grise'
+            }),
+            'patente': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'N° de la patente'
+            }),
+            'carte_stationnement': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'N° de la carte de stationnement'
+            }),
             # Documents & conformité légale
             'compagnie_assurance': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -155,6 +174,7 @@ class VehiculeForm(forms.ModelForm):
         }
         labels = {
             # Informations générales
+            'numero_ordre': 'N° d\'ordre',
             'modele': 'Modèle de véhicule',
             'immatriculation': 'Numéro d\'immatriculation',
             'actif': 'Véhicule actif',
@@ -166,6 +186,10 @@ class VehiculeForm(forms.ModelForm):
             'type_carburant': 'Type de carburant',
             'type_boite': 'Type de boîte de vitesse',
             'kilometrage_actuel': 'Kilométrage actuel (km)',
+            # Documents administratifs
+            'numero_carte_grise': 'N° Carte Grise',
+            'patente': 'Patente',
+            'carte_stationnement': 'Carte de Stationnement',
             # Documents & conformité légale
             'compagnie_assurance': 'Compagnie d\'assurance',
             'date_expiration_assurance': 'Date d\'expiration assurance',

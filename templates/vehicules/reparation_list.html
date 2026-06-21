@@ -258,7 +258,7 @@ Macro pour générer les paramètres de pagination en conservant les filtres.
                         <option value="">Tous les véhicules</option>
                         {% for vehicule in vehicules %}
                             <option value="{{ vehicule.pk }}" {% if vehicule_filtre == vehicule.pk|stringformat:"s" %}selected{% endif %}>
-                                {{ vehicule.immatriculation }}
+                                {{ vehicule.display_immat }}
                             </option>
                         {% endfor %}
                     </select>
@@ -340,7 +340,7 @@ Macro pour générer les paramètres de pagination en conservant les filtres.
                             <div class="d-flex align-items-center gap-2">
                                 <div class="v-icon">{{ rep.vehicule.immatriculation|slice:":2"|upper }}</div>
                                 <div>
-                                    <div class="v-immat">{{ rep.vehicule.immatriculation }}</div>
+                                    <div class="v-immat">{{ rep.vehicule.display_immat }}</div>
                                     <div class="v-sub">{{ rep.vehicule.modele.nom }}</div>
                                 </div>
                             </div>

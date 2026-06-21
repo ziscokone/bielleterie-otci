@@ -347,7 +347,7 @@
                     <span class="info-label">Véhicule :</span>
                     <span class="info-value">
                         {% if voyage.vehicule %}
-                            {{ voyage.vehicule.immatriculation }}
+                            {{ voyage.vehicule.display_immat }}
                         {% else %}
                             Non assigné
                         {% endif %}

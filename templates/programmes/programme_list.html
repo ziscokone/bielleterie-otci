@@ -73,7 +73,7 @@
                                     <td><span class="badge bg-primary">{{ programme.numero_depart }}</span></td>
                                     <td>
                                         {% if programme.vehicule_defaut %}
-                                            {{ programme.vehicule_defaut.immatriculation }}
+                                            {{ programme.vehicule_defaut.display_immat }}
                                         {% else %}
                                             <span class="text-muted">—</span>
                                         {% endif %}

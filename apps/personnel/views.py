@@ -6,8 +6,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models import Q
+from django.http import JsonResponse, FileResponse, Http404
+import os
 from core.mixins import AdminRequiredMixin
-from .models import Utilisateur, Chauffeur, Convoyeur, Module
+from .models import Utilisateur, Chauffeur, Convoyeur, Module, DocumentChauffeur
 from .forms import UtilisateurForm, ChauffeurForm, ConvoyeurForm
 from apps.compagnie.models import Compagnie
 import json
@@ -239,7 +241,86 @@ class ChauffeurDetailView(LoginRequiredMixin, DetailView):
 
         context['chart_labels_json'] = json.dumps(mois_labels)
         context['chart_data_json']   = json.dumps(mois_data)
+        context['documents'] = chauffeur.documents.all()
         return context
+
+
+def upload_document_chauffeur(request, chauffeur_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Non autorisé'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Méthode non autorisée'}, status=405)
+
+    chauffeur = get_object_or_404(Chauffeur, pk=chauffeur_id)
+    fichier = request.FILES.get('fichier')
+    type_doc = request.POST.get('type_document')
+    nom = request.POST.get('nom', '').strip()
+    date_expiration = request.POST.get('date_expiration') or None
+
+    if not fichier:
+        return JsonResponse({'success': False, 'error': 'Aucun fichier fourni'}, status=400)
+    if not type_doc:
+        return JsonResponse({'success': False, 'error': 'Type de document requis'}, status=400)
+
+    ext = os.path.splitext(fichier.name)[1].lower()
+    if ext not in ['.pdf', '.jpg', '.jpeg', '.png']:
+        return JsonResponse({'success': False, 'error': 'Format non accepté (PDF, JPG, PNG uniquement)'}, status=400)
+
+    if fichier.size > 10 * 1024 * 1024:
+        return JsonResponse({'success': False, 'error': 'Fichier trop volumineux (max 10 Mo)'}, status=400)
+
+    doc = DocumentChauffeur.objects.create(
+        chauffeur=chauffeur,
+        type_document=type_doc,
+        nom=nom or fichier.name,
+        fichier=fichier,
+        date_expiration=date_expiration if date_expiration else None,
+        ajoute_par=request.user,
+    )
+
+    return JsonResponse({
+        'success': True,
+        'document': {
+            'id': doc.id,
+            'type_label': doc.get_type_document_display(),
+            'nom': doc.nom,
+            'date_ajout': doc.date_ajout.strftime('%d/%m/%Y'),
+            'date_expiration': doc.date_expiration.strftime('%d/%m/%Y') if doc.date_expiration else None,
+            'est_expire': doc.est_expire,
+            'expire_bientot': doc.expire_bientot,
+            'est_image': doc.est_image,
+        }
+    })
+
+
+def telecharger_document_chauffeur(request, doc_id):
+    if not request.user.is_authenticated:
+        raise Http404
+    doc = get_object_or_404(DocumentChauffeur, pk=doc_id)
+    if not doc.fichier:
+        raise Http404
+    try:
+        response = FileResponse(doc.fichier.open('rb'), as_attachment=True, filename=os.path.basename(doc.fichier.name))
+        return response
+    except FileNotFoundError:
+        raise Http404
+
+
+def supprimer_document_chauffeur(request, doc_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Non autorisé'}, status=403)
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'error': 'Action réservée au super administrateur'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Méthode non autorisée'}, status=405)
+
+    doc = get_object_or_404(DocumentChauffeur, pk=doc_id)
+    chauffeur_id = doc.chauffeur_id
+    # Supprimer le fichier physique
+    if doc.fichier and os.path.isfile(doc.fichier.path):
+        os.remove(doc.fichier.path)
+    doc.delete()
+    return JsonResponse({'success': True, 'chauffeur_id': chauffeur_id})
 
 
 # Vues pour les convoyeurs

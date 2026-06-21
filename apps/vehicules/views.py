@@ -550,7 +550,7 @@ class RapportReparationsView(GestionRequiredMixin, TemplateView):
             # JSON pour le graphique véhicules
             context['vehicules_stats_json'] = json.dumps([
                 {
-                    'label': v['vehicule'].immatriculation,
+                    'label': v['vehicule'].display_immat,
                     'cout': float(v['cout_total']),
                     'niveau': v['niveau_alerte']
                 }
@@ -580,7 +580,7 @@ class RapportReparationsView(GestionRequiredMixin, TemplateView):
                     )['total'] or 0
                     costs[type_rep.nom] = float(montant)
                 matrice.append({
-                    'label': vehicule.immatriculation,
+                    'label': vehicule.display_immat,
                     'costs': costs,
                     'total': float(v_stat['cout_total']),
                     'niveau': v_stat['niveau_alerte'],

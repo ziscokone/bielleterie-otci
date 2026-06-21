@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{% if form.instance.pk %}{{ form.instance.immatriculation }}{% else %}Nouveau Véhicule{% endif %}{% endblock %}
+{% block title %}{% if form.instance.pk %}{{ form.instance.display_immat }}{% else %}Nouveau Véhicule{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -229,7 +229,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
             <div>
                 <h1 class="veh-header-title">
                     <i class="bi bi-bus-front"></i>
-                    {% if form.instance.pk %}{{ form.instance.immatriculation }}{% else %}Nouveau Véhicule{% endif %}
+                    {% if form.instance.pk %}{{ form.instance.display_immat }}{% else %}Nouveau Véhicule{% endif %}
                 </h1>
                 {% if form.instance.pk %}
                 <div class="veh-meta">
@@ -294,12 +294,18 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                             {{ form.modele }}
                             {% if form.modele.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.modele.errors }}</div>{% endif %}
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="field-label">{{ form.immatriculation.label }}<span class="req">*</span></label>
                             {{ form.immatriculation }}
                             {% if form.immatriculation.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.immatriculation.errors }}</div>{% endif %}
                         </div>
-                        <div class="col-md-3 d-flex align-items-end">
+                        <div class="col-md-2">
+                            <label class="field-label">{{ form.numero_ordre.label }}</label>
+                            {{ form.numero_ordre }}
+                            {% if form.numero_ordre.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.numero_ordre.errors }}</div>{% endif %}
+                            <div class="form-text" style="font-size:10px;">Ex : 01, 05, 30</div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
                             <div class="switch-row w-100">
                                 {{ form.actif }}
                                 <label for="{{ form.actif.id_for_label }}">{{ form.actif.label }}</label>
@@ -344,6 +350,30 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                             {{ form.kilometrage_actuel }}
                             {% if form.kilometrage_actuel.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.kilometrage_actuel.errors }}</div>{% endif %}
                             <div class="field-hint">Mis à jour automatiquement à chaque voyage terminé</div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="section-divider">
+
+                <!-- ▸ Documents administratifs -->
+                <div class="form-section">
+                    <div class="section-label"><i class="bi bi-folder2-open"></i>Documents administratifs</div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="field-label">{{ form.numero_carte_grise.label }}</label>
+                            {{ form.numero_carte_grise }}
+                            {% if form.numero_carte_grise.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.numero_carte_grise.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="field-label">{{ form.patente.label }}</label>
+                            {{ form.patente }}
+                            {% if form.patente.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.patente.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="field-label">{{ form.carte_stationnement.label }}</label>
+                            {{ form.carte_stationnement }}
+                            {% if form.carte_stationnement.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.carte_stationnement.errors }}</div>{% endif %}
                         </div>
                     </div>
                 </div>

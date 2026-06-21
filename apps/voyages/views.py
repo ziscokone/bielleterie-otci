@@ -19,7 +19,7 @@ from apps.compagnie.models import Compagnie
 from apps.personnel.models import Chauffeur, Convoyeur
 from apps.comptabilite.models import TypeDepense, Depense
 from apps.vehicules.models import Vehicule
-from apps.billets.models import Billet, HistoriqueReport
+from apps.billets.models import Billet, HistoriqueReport, DemandeRemboursement
 
 
 class VoyageListView(GestionRequiredMixin, ListView):
@@ -120,8 +120,14 @@ class VoyageDetailView(GestionRequiredMixin, DetailView):
         context['billets_reserves'] = billets.filter(statut='reserve')
 
         # Calculer les statistiques
-        context['nb_billets_payes'] = billets_payes.count()
-        context['nb_billets_reserves'] = billets.filter(statut='reserve').count()
+        nb_payes = billets_payes.count()
+        nb_reserves = billets.filter(statut='reserve').count()
+        nb_remboursements_attente = DemandeRemboursement.objects.filter(
+            billet__voyage=voyage, statut='en_attente'
+        ).count()
+        context['nb_billets_payes'] = nb_payes
+        context['nb_billets_reserves'] = nb_reserves
+        context['nb_remboursements_en_attente'] = nb_remboursements_attente
         context['montant_total'] = sum(b.montant for b in billets_payes)
 
         # Statistiques par moyen de paiement (uniquement billets payés)
@@ -395,7 +401,7 @@ def get_voyage_agents(request, pk):
         vehicules_data = [
             {
                 'id': v.id,
-                'immatriculation': v.immatriculation,
+                'immatriculation': v.display_immat,
                 'modele_nom': v.modele.nom,
                 'capacite': v.capacite,
                 'needs_reassignment': max_siege > v.capacite,
@@ -472,7 +478,7 @@ def save_voyage_agents(request, pk):
             if vehicule.est_en_reparation:
                 return JsonResponse({
                     'success': False,
-                    'error': f'Le véhicule {vehicule.immatriculation} est actuellement en réparation '
+                    'error': f'Le véhicule {vehicule.display_immat} est actuellement en réparation '
                              f'et ne peut pas être assigné à un voyage.'
                 }, status=400)
 
@@ -546,7 +552,7 @@ def save_voyage_agents(request, pk):
             'message': 'Agents et véhicule enregistrés avec succès',
             'chauffeur_nom': voyage.chauffeur.nom_complet if voyage.chauffeur else None,
             'convoyeur_nom': voyage.convoyeur.nom_complet if voyage.convoyeur else None,
-            'vehicule_immatriculation': voyage.vehicule.immatriculation if voyage.vehicule else None,
+            'vehicule_immatriculation': voyage.vehicule.display_immat if voyage.vehicule else None,
             'reassignations': reassignations,
         })
 
@@ -630,7 +636,7 @@ def get_voyage_depenses(request, pk):
         for v in Vehicule.objects.filter(actif=True).select_related('modele').order_by('immatriculation'):
             vehicules_actifs_data.append({
                 'id': v.id,
-                'immatriculation': v.immatriculation,
+                'immatriculation': v.display_immat,
                 'modele': v.modele.nom if v.modele else '',
             })
 
@@ -1030,7 +1036,7 @@ def get_voyages_report(request, billet_id):
                 'numero_depart': voyage.numero_depart,
                 'places_libres': places_libres,
                 'capacite': voyage.capacite,
-                'vehicule': voyage.vehicule.immatriculation if voyage.vehicule else 'Non assigné'
+                'vehicule': voyage.vehicule.display_immat if voyage.vehicule else 'Non assigné'
             })
 
         return JsonResponse({
@@ -1364,7 +1370,7 @@ def creer_reparation_depuis_depense(request, depense_id):
             'message': f'Réparation créée avec succès (Fiche #{reparation.pk})',
             'reparation_id': reparation.pk,
             'reparation_numero': f"#{reparation.pk}",
-            'vehicule': vehicule.immatriculation,
+            'vehicule': vehicule.display_immat,
             'type_reparation': type_reparation.nom,
             'montant': float(depense.montant)
         })
@@ -1375,6 +1381,182 @@ def creer_reparation_depuis_depense(request, depense_id):
         import traceback
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# ==================== GESTION DES REMBOURSEMENTS ====================
+
+@require_http_methods(["POST"])
+def demander_remboursement(request, billet_id):
+    """Vue AJAX pour créer une demande de remboursement."""
+    try:
+        billet = get_object_or_404(Billet, pk=billet_id)
+        voyage = billet.voyage
+        user = request.user
+
+        if not user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Non authentifié'}, status=401)
+
+        if not user.has_global_access and voyage.gare != user.gare:
+            return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
+
+        if voyage.statut == 'termine':
+            return JsonResponse({
+                'success': False,
+                'error': 'Impossible de rembourser un billet d\'un voyage terminé'
+            }, status=400)
+
+        if billet.statut != 'paye':
+            return JsonResponse({
+                'success': False,
+                'error': 'Seuls les billets payés peuvent être remboursés'
+            }, status=400)
+
+        # Vérifier qu'il n'y a pas déjà une demande en attente
+        if hasattr(billet, 'demande_remboursement') and billet.demande_remboursement.statut == 'en_attente':
+            return JsonResponse({
+                'success': False,
+                'error': 'Une demande de remboursement est déjà en attente pour ce billet'
+            }, status=400)
+
+        data = json.loads(request.body)
+        motif = data.get('motif', '').strip()
+
+        if not motif:
+            return JsonResponse({'success': False, 'error': 'Le motif est obligatoire'}, status=400)
+
+        DemandeRemboursement.objects.create(
+            billet=billet,
+            demandee_par=user,
+            motif=motif,
+            montant=billet.montant,
+        )
+
+        return JsonResponse({'success': True, 'message': 'Demande de remboursement envoyée avec succès'})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Données JSON invalides'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@require_http_methods(["POST"])
+def traiter_remboursement(request, demande_id):
+    """Vue AJAX pour approuver ou rejeter une demande de remboursement."""
+    try:
+        demande = get_object_or_404(DemandeRemboursement, pk=demande_id)
+        user = request.user
+
+        if not user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Non authentifié'}, status=401)
+
+        if not (user.is_chef_gare or user.is_manager or user.is_pdg or user.is_super_admin):
+            return JsonResponse({
+                'success': False,
+                'error': 'Vous n\'avez pas les permissions nécessaires'
+            }, status=403)
+
+        # Chef de gare : uniquement sa gare
+        if user.is_chef_gare and not user.has_global_access:
+            if demande.billet.voyage.gare != user.gare:
+                return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
+
+        if demande.statut != 'en_attente':
+            return JsonResponse({'success': False, 'error': 'Cette demande a déjà été traitée'}, status=400)
+
+        data = json.loads(request.body)
+        action = data.get('action')  # 'approuver' ou 'rejeter'
+        commentaire = data.get('commentaire', '').strip()
+
+        if action not in ['approuver', 'rejeter']:
+            return JsonResponse({'success': False, 'error': 'Action invalide'}, status=400)
+
+        if action == 'rejeter' and not commentaire:
+            return JsonResponse({
+                'success': False,
+                'error': 'Un commentaire est obligatoire pour rejeter une demande'
+            }, status=400)
+
+        demande.traitee_par = user
+        demande.date_traitement = timezone.now()
+        demande.commentaire = commentaire
+
+        if action == 'approuver':
+            demande.statut = 'approuvee'
+            billet = demande.billet
+            billet.statut = 'rembourse'
+            billet.montant = 0
+            billet.numero_siege = None  # Libère le siège
+            billet.save(update_fields=['statut', 'montant', 'numero_siege', 'date_modification'])
+            message = 'Remboursement approuvé — le siège a été libéré'
+        else:
+            demande.statut = 'rejetee'
+            message = 'Demande rejetée'
+
+        demande.save()
+
+        return JsonResponse({'success': True, 'message': message})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Données JSON invalides'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+class ListeRemboursementsView(GestionRequiredMixin, TemplateView):
+    """Vue pour la liste et la gestion des demandes de remboursement."""
+    template_name = 'voyages/liste_remboursements.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        today = timezone.now().date()
+
+        # Filtres (défaut : aujourd'hui)
+        date_debut = self.request.GET.get('date_debut', today.isoformat())
+        date_fin = self.request.GET.get('date_fin', today.isoformat())
+        statut_filtre = self.request.GET.get('statut', '')
+        gare_id = self.request.GET.get('gare', '')
+
+        demandes = DemandeRemboursement.objects.select_related(
+            'billet', 'billet__voyage', 'billet__voyage__gare',
+            'billet__voyage__ligne', 'demandee_par', 'traitee_par'
+        )
+
+        # Filtrage par gare selon le rôle
+        if not user.has_global_access and user.gare:
+            demandes = demandes.filter(billet__voyage__gare=user.gare)
+        elif user.has_global_access and gare_id:
+            demandes = demandes.filter(billet__voyage__gare_id=gare_id)
+
+        if date_debut:
+            demandes = demandes.filter(date_demande__date__gte=date_debut)
+        if date_fin:
+            demandes = demandes.filter(date_demande__date__lte=date_fin)
+        if statut_filtre:
+            demandes = demandes.filter(statut=statut_filtre)
+
+        from django.db.models import Sum
+        stats = {
+            'nb_en_attente': demandes.filter(statut='en_attente').count(),
+            'nb_approuvees': demandes.filter(statut='approuvee').count(),
+            'nb_rejetees': demandes.filter(statut='rejetee').count(),
+            'montant_total': demandes.filter(statut='approuvee').aggregate(
+                t=Sum('montant'))['t'] or 0,
+        }
+
+        from apps.gares.models import Gare
+        gares = Gare.objects.filter(active=True).order_by('nom') if user.has_global_access else None
+
+        context['demandes'] = demandes.order_by('-date_demande')
+        context['date_debut'] = date_debut
+        context['date_fin'] = date_fin
+        context['statut_filtre'] = statut_filtre
+        context['gare_id'] = gare_id
+        context['stats'] = stats
+        context['gares'] = gares
+        context['statut_choices'] = DemandeRemboursement.STATUT_CHOICES
+        context['today'] = today.isoformat()
+        return context
 
 
 class DashboardReportsView(GestionRequiredMixin, TemplateView):

@@ -196,6 +196,58 @@ class Chauffeur(models.Model):
         return self.nom_complet
 
 
+class DocumentChauffeur(models.Model):
+    TYPE_CHOICES = [
+        ('cni', 'CNI (Carte Nationale d\'Identité)'),
+        ('permis', 'Permis de conduire'),
+        ('certificat_medical', 'Certificat médical'),
+        ('casier_judiciaire', 'Casier judiciaire'),
+        ('contrat', 'Contrat de travail'),
+        ('autre', 'Autre'),
+    ]
+
+    chauffeur = models.ForeignKey(Chauffeur, on_delete=models.CASCADE, related_name='documents')
+    type_document = models.CharField(max_length=30, choices=TYPE_CHOICES, verbose_name="Type de document")
+    nom = models.CharField(max_length=200, verbose_name="Nom du document", blank=True)
+    fichier = models.FileField(upload_to='chauffeurs/documents/', verbose_name="Fichier")
+    date_expiration = models.DateField(null=True, blank=True, verbose_name="Date d'expiration")
+    date_ajout = models.DateTimeField(auto_now_add=True)
+    ajoute_par = models.ForeignKey(
+        'personnel.Utilisateur', on_delete=models.SET_NULL, null=True,
+        related_name='documents_chauffeurs_ajoutes'
+    )
+
+    class Meta:
+        verbose_name = "Document chauffeur"
+        ordering = ['type_document', '-date_ajout']
+
+    def __str__(self):
+        return f"{self.get_type_document_display()} — {self.chauffeur.nom_complet}"
+
+    @property
+    def est_expire(self):
+        if self.date_expiration:
+            from datetime import date
+            return self.date_expiration < date.today()
+        return False
+
+    @property
+    def expire_bientot(self):
+        if self.date_expiration:
+            from datetime import date, timedelta
+            return date.today() <= self.date_expiration <= date.today() + timedelta(days=30)
+        return False
+
+    @property
+    def extension(self):
+        import os
+        return os.path.splitext(self.fichier.name)[1].lower()
+
+    @property
+    def est_image(self):
+        return self.extension in ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+
+
 class Convoyeur(models.Model):
     """Modèle représentant un convoyeur de la compagnie."""
 

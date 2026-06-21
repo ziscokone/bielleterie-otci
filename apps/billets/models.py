@@ -11,6 +11,7 @@ class Billet(models.Model):
         ('reserve', 'Réservé'),
         ('paye', 'Payé'),
         ('reporte', 'Reporté'),
+        ('rembourse', 'Remboursé'),
     ]
 
     MOYEN_PAIEMENT_CHOICES = [
@@ -50,7 +51,7 @@ class Billet(models.Model):
     )
     client_nom = models.CharField(max_length=200, verbose_name="Nom du client")
     client_telephone = models.CharField(max_length=20, verbose_name="Téléphone du client")
-    numero_siege = models.PositiveIntegerField(verbose_name="Numéro de siège")
+    numero_siege = models.PositiveIntegerField(null=True, blank=True, verbose_name="Numéro de siège")
     montant = models.DecimalField(
         max_digits=10,
         decimal_places=0,
@@ -118,7 +119,8 @@ class Billet(models.Model):
         unique_together = ['voyage', 'numero_siege']
 
     def __str__(self):
-        return f"{self.numero} - {self.client_nom} (Siège {self.numero_siege})"
+        siege_str = f"Siège {self.numero_siege}" if self.numero_siege else "Remboursé"
+        return f"{self.numero} - {self.client_nom} ({siege_str})"
 
     def clean(self):
         """Validation du billet."""
@@ -198,6 +200,7 @@ class Billet(models.Model):
             'compagnie_nom': compagnie.nom if compagnie else '',
             'compagnie_logo': compagnie.logo.url if compagnie and compagnie.logo else '',
             'utiliser_souche': compagnie.utiliser_souche if compagnie else False,
+            'message_bas_ticket': compagnie.message_bas_ticket if compagnie else '',
             'statut': self.statut,
         }
 
@@ -336,3 +339,56 @@ class HistoriqueReport(models.Model):
 
     def __str__(self):
         return f"Report {self.ancien_billet.numero} → {self.nouveau_billet.numero} ({self.date_report.strftime('%d/%m/%Y %H:%M')})"
+
+
+class DemandeRemboursement(models.Model):
+    STATUT_CHOICES = [
+        ('en_attente', 'En attente'),
+        ('approuvee', 'Approuvée'),
+        ('rejetee', 'Rejetée'),
+    ]
+
+    billet = models.OneToOneField(
+        Billet,
+        on_delete=models.CASCADE,
+        related_name='demande_remboursement',
+        verbose_name="Billet"
+    )
+    demandee_par = models.ForeignKey(
+        'personnel.Utilisateur',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='demandes_remboursement_creees',
+        verbose_name="Demandée par"
+    )
+    motif = models.TextField(verbose_name="Motif du remboursement")
+    montant = models.DecimalField(
+        max_digits=10,
+        decimal_places=0,
+        verbose_name="Montant à rembourser"
+    )
+    statut = models.CharField(
+        max_length=20,
+        choices=STATUT_CHOICES,
+        default='en_attente',
+        verbose_name="Statut"
+    )
+    date_demande = models.DateTimeField(auto_now_add=True, verbose_name="Date de la demande")
+    traitee_par = models.ForeignKey(
+        'personnel.Utilisateur',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='remboursements_traites',
+        verbose_name="Traitée par"
+    )
+    date_traitement = models.DateTimeField(null=True, blank=True, verbose_name="Date de traitement")
+    commentaire = models.TextField(blank=True, verbose_name="Commentaire")
+
+    class Meta:
+        verbose_name = "Demande de remboursement"
+        verbose_name_plural = "Demandes de remboursement"
+        ordering = ['-date_demande']
+
+    def __str__(self):
+        return f"Remboursement {self.billet.numero} - {self.get_statut_display()}"

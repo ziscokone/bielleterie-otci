@@ -24,6 +24,7 @@
     right: 24px;
     top: -10px;
     line-height: 1;
+    pointer-events: none;
   }
   .fiche-header .avatar {
     width: 64px; height: 64px;
@@ -153,7 +154,7 @@
         <a href="{% url 'personnel:chauffeur_update' chauffeur.pk %}" class="btn btn-sm btn-light fw-semibold">
           <i class="bi bi-pencil me-1"></i>Modifier
         </a>
-        <a href="{% url 'personnel:chauffeur_list' %}" class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3)">
+        <a href="{% url 'personnel:chauffeur_list' %}" class="btn btn-sm btn-danger">
           <i class="bi bi-arrow-left me-1"></i>Retour
         </a>
       </div>
@@ -171,6 +172,12 @@
       <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-activite">
         <i class="bi bi-graph-up-arrow"></i>Activité voyages
         {% if nb_total > 0 %}<span class="badge rounded-pill ms-1" style="background:var(--color-accent);font-size:10px">{{ nb_total }}</span>{% endif %}
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-dossier">
+        <i class="bi bi-folder2-open"></i>Dossier
+        {% if documents %}<span class="badge rounded-pill ms-1" style="background:var(--color-accent);font-size:10px">{{ documents|length }}</span>{% endif %}
       </button>
     </li>
   </ul>
@@ -372,7 +379,7 @@
                   <td>{{ voyage.ligne }}</td>
                   <td>{{ voyage.gare }}</td>
                   <td>
-                    {% if voyage.vehicule %}{{ voyage.vehicule.immatriculation }}
+                    {% if voyage.vehicule %}{{ voyage.vehicule.display_immat }}
                     {% else %}<span class="text-muted">—</span>{% endif %}
                   </td>
                   <td>
@@ -399,9 +406,161 @@
       </div>
 
     </div>{# fin tab-activite #}
+
+    <!-- ── Onglet Dossier ────────────────────────────────────────── -->
+    <div class="tab-pane fade" id="tab-dossier">
+      <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h6 class="fw-bold mb-0"><i class="bi bi-folder2-open me-2 text-primary"></i>Dossier du chauffeur</h6>
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+              <i class="bi bi-upload me-1"></i> Ajouter un document
+            </button>
+          </div>
+
+          {% if documents %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle" id="table-documents">
+              <thead class="table-light">
+                <tr>
+                  <th style="font-size:12px;text-transform:uppercase;letter-spacing:.4px">Type</th>
+                  <th style="font-size:12px;text-transform:uppercase;letter-spacing:.4px">Nom</th>
+                  <th style="font-size:12px;text-transform:uppercase;letter-spacing:.4px">Date d'ajout</th>
+                  <th style="font-size:12px;text-transform:uppercase;letter-spacing:.4px">Expiration</th>
+                  <th style="font-size:12px;text-transform:uppercase;letter-spacing:.4px">Ajouté par</th>
+                  <th style="font-size:12px;text-transform:uppercase;letter-spacing:.4px">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for doc in documents %}
+                <tr id="doc-row-{{ doc.id }}">
+                  <td>
+                    <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                      <i class="bi bi-file-earmark me-1"></i>{{ doc.get_type_document_display }}
+                    </span>
+                  </td>
+                  <td class="fw-semibold" style="font-size:13px">{{ doc.nom }}</td>
+                  <td style="font-size:13px">{{ doc.date_ajout|date:"d/m/Y" }}</td>
+                  <td style="font-size:13px">
+                    {% if doc.date_expiration %}
+                      {% if doc.est_expire %}
+                        <span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>{{ doc.date_expiration|date:"d/m/Y" }} — Expiré</span>
+                      {% elif doc.expire_bientot %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>{{ doc.date_expiration|date:"d/m/Y" }} — Bientôt</span>
+                      {% else %}
+                        <span class="text-success">{{ doc.date_expiration|date:"d/m/Y" }}</span>
+                      {% endif %}
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  </td>
+                  <td style="font-size:13px">{{ doc.ajoute_par.nom_complet|default:doc.ajoute_par.username|default:"—" }}</td>
+                  <td>
+                    <a href="{% url 'personnel:telecharger_document_chauffeur' doc.id %}"
+                       class="btn btn-sm btn-outline-primary me-1" title="Télécharger">
+                      <i class="bi bi-download"></i>
+                    </a>
+                    {% if request.user.is_superuser %}
+                    <button class="btn btn-sm btn-outline-danger btn-supprimer-doc"
+                            data-doc-id="{{ doc.id }}" data-doc-nom="{{ doc.nom }}" title="Supprimer">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center py-5" id="dossier-vide">
+            <i class="bi bi-folder2-open display-4 text-muted mb-3 d-block"></i>
+            <p class="text-muted">Aucun document enregistré pour ce chauffeur.</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+              <i class="bi bi-upload me-1"></i> Ajouter le premier document
+            </button>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>{# fin tab-dossier #}
+
   </div>{# fin tab-content #}
 
 </div>
+
+<!-- ── Modal Upload Document ─────────────────────────────────────── -->
+<div class="modal fade" id="uploadDocModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-upload me-2"></i>Ajouter un document</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="upload-alert" class="alert d-none"></div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Type de document <span class="text-danger">*</span></label>
+          <select class="form-select" id="upload-type">
+            <option value="">-- Choisir --</option>
+            <option value="cni">CNI (Carte Nationale d'Identité)</option>
+            <option value="permis">Permis de conduire</option>
+            <option value="certificat_medical">Certificat médical</option>
+            <option value="casier_judiciaire">Casier judiciaire</option>
+            <option value="contrat">Contrat de travail</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Nom du document</label>
+          <input type="text" class="form-control" id="upload-nom" placeholder="Ex: Permis catégorie D — 2024">
+          <div class="form-text">Laissez vide pour utiliser le nom du fichier.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Fichier <span class="text-danger">*</span></label>
+          <input type="file" class="form-control" id="upload-fichier" accept=".pdf,.jpg,.jpeg,.png">
+          <div class="form-text">PDF, JPG ou PNG — max 10 Mo</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Date d'expiration</label>
+          <input type="date" class="form-control" id="upload-expiration">
+          <div class="form-text">Facultatif. Utile pour CNI, permis, etc.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary" id="btn-upload-confirmer">
+          <span id="upload-spinner" class="spinner-border spinner-border-sm d-none me-1"></span>
+          <i class="bi bi-upload me-1" id="upload-icon"></i> Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal Confirmation Suppression ────────────────────────────── -->
+<div class="modal fade" id="supprimerDocModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h6 class="modal-title"><i class="bi bi-trash me-2"></i>Supprimer le document</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-1">Voulez-vous supprimer :</p>
+        <p class="fw-bold" id="suppr-doc-nom"></p>
+        <p class="text-danger small">Cette action est irréversible.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-danger btn-sm" id="btn-suppr-confirmer">Supprimer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -415,6 +574,106 @@ document.addEventListener('DOMContentLoaded', function () {
     var tabActivite = document.querySelector('[data-bs-target="#tab-activite"]');
     if (tabActivite) { new bootstrap.Tab(tabActivite).show(); }
   }
+  if (urlParams.get('tab') === 'dossier') {
+    var tabDossier = document.querySelector('[data-bs-target="#tab-dossier"]');
+    if (tabDossier) { new bootstrap.Tab(tabDossier).show(); }
+  }
+
+  // ── Upload document ──────────────────────────────────────────────
+  var chauffeurId = {{ chauffeur.id }};
+  var uploadModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('uploadDocModal'));
+
+  document.getElementById('btn-upload-confirmer').addEventListener('click', function () {
+    var type    = document.getElementById('upload-type').value;
+    var nom     = document.getElementById('upload-nom').value;
+    var fichier = document.getElementById('upload-fichier').files[0];
+    var expir   = document.getElementById('upload-expiration').value;
+    var alert   = document.getElementById('upload-alert');
+
+    alert.className = 'alert d-none';
+    if (!type) { alert.className = 'alert alert-warning'; alert.textContent = 'Veuillez choisir un type de document.'; return; }
+    if (!fichier) { alert.className = 'alert alert-warning'; alert.textContent = 'Veuillez sélectionner un fichier.'; return; }
+
+    var spinner = document.getElementById('upload-spinner');
+    var icon    = document.getElementById('upload-icon');
+    spinner.classList.remove('d-none');
+    icon.classList.add('d-none');
+    this.disabled = true;
+
+    var fd = new FormData();
+    fd.append('type_document', type);
+    fd.append('nom', nom);
+    fd.append('fichier', fichier);
+    if (expir) fd.append('date_expiration', expir);
+    fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch('/personnel/chauffeurs/' + chauffeurId + '/documents/upload/', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(data => {
+        spinner.classList.add('d-none');
+        icon.classList.remove('d-none');
+        this.disabled = false;
+        if (data.success) {
+          uploadModal.hide();
+          // Reset form
+          document.getElementById('upload-type').value = '';
+          document.getElementById('upload-nom').value = '';
+          document.getElementById('upload-fichier').value = '';
+          document.getElementById('upload-expiration').value = '';
+          // Recharger la page sur l'onglet dossier
+          window.location.href = window.location.pathname + '?tab=dossier';
+        } else {
+          alert.className = 'alert alert-danger';
+          alert.textContent = data.error || 'Erreur lors de l\'upload.';
+        }
+      })
+      .catch(() => {
+        spinner.classList.add('d-none');
+        icon.classList.remove('d-none');
+        this.disabled = false;
+        alert.className = 'alert alert-danger';
+        alert.textContent = 'Erreur réseau. Veuillez réessayer.';
+      });
+  });
+
+  // ── Suppression document ─────────────────────────────────────────
+  var docIdASupprimer = null;
+  var supprimerModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('supprimerDocModal'));
+
+  document.querySelectorAll('.btn-supprimer-doc').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      docIdASupprimer = this.dataset.docId;
+      document.getElementById('suppr-doc-nom').textContent = this.dataset.docNom;
+      supprimerModal.show();
+    });
+  });
+
+  document.getElementById('btn-suppr-confirmer').addEventListener('click', function() {
+    if (!docIdASupprimer) return;
+    this.disabled = true;
+    fetch('/personnel/documents/' + docIdASupprimer + '/supprimer/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+    })
+      .then(r => r.json())
+      .then(data => {
+        this.disabled = false;
+        if (data.success) {
+          supprimerModal.hide();
+          var row = document.getElementById('doc-row-' + docIdASupprimer);
+          if (row) row.remove();
+          // Afficher vide si plus aucun document
+          if (!document.querySelector('#table-documents tbody tr')) {
+            document.querySelector('#table-documents').closest('.table-responsive').innerHTML =
+              '<p class="text-muted text-center py-4">Aucun document enregistré.</p>';
+          }
+          docIdASupprimer = null;
+        } else {
+          supprimerModal.hide();
+          alert(data.error || 'Erreur lors de la suppression.');
+        }
+      });
+  });
 
   // Graphique activité
   var ctx = document.getElementById('activityChart');

@@ -13,7 +13,7 @@ class CompagnieAdmin(admin.ModelAdmin):
             'fields': ('adresse', 'telephone', 'email')
         }),
         ('Configuration', {
-            'fields': ('utiliser_souche',),
+            'fields': ('utiliser_souche', 'message_bas_ticket'),
             'description': 'Paramètres d\'impression des billets'
         }),
     )

@@ -358,7 +358,7 @@
             <div class="doc-alert-card worst-{{ alerte.worst }}">
                 <div class="doc-alert-veh">
                     <i class="bi bi-bus-front" style="color:var(--color-accent);font-size:14px"></i>
-                    <span class="doc-alert-immat">{{ alerte.vehicule.immatriculation }}</span>
+                    <span class="doc-alert-immat">{{ alerte.vehicule.display_immat }}</span>
                 </div>
                 <div class="doc-alert-docs">
                     {% for doc in alerte.docs %}
@@ -411,7 +411,7 @@
                                     <i class="bi bi-bus-front"></i>
                                 </div>
                                 <div>
-                                    <div class="v-immat">{{ vehicule.immatriculation }}</div>
+                                    <div class="v-immat">{{ vehicule.display_immat }}</div>
                                     <div class="v-sub">{{ vehicule.modele.marque }}</div>
                                 </div>
                             </div>
