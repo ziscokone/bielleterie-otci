@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Utilisateur, Chauffeur, Convoyeur
+from .models import Utilisateur, Chauffeur, Convoyeur, TypeDocumentChauffeur
 
 
 @admin.register(Utilisateur)
@@ -50,3 +50,11 @@ class ConvoyeurAdmin(admin.ModelAdmin):
     list_filter = ('actif',)
     search_fields = ('nom_complet', 'telephone')
     ordering = ('nom_complet',)
+
+
+@admin.register(TypeDocumentChauffeur)
+class TypeDocumentChauffeurAdmin(admin.ModelAdmin):
+    list_display = ('nom', 'actif')
+    list_filter = ('actif',)
+    search_fields = ('nom',)
+    ordering = ('nom',)

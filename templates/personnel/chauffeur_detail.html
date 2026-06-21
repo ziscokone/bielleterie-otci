@@ -437,7 +437,7 @@
                 <tr id="doc-row-{{ doc.id }}">
                   <td>
                     <span class="badge bg-secondary-subtle text-secondary-emphasis">
-                      <i class="bi bi-file-earmark me-1"></i>{{ doc.get_type_document_display }}
+                      <i class="bi bi-file-earmark me-1"></i>{{ doc.type_document.nom }}
                     </span>
                   </td>
                   <td class="fw-semibold" style="font-size:13px">{{ doc.nom }}</td>
@@ -505,12 +505,9 @@
           <label class="form-label fw-semibold">Type de document <span class="text-danger">*</span></label>
           <select class="form-select" id="upload-type">
             <option value="">-- Choisir --</option>
-            <option value="cni">CNI (Carte Nationale d'Identité)</option>
-            <option value="permis">Permis de conduire</option>
-            <option value="certificat_medical">Certificat médical</option>
-            <option value="casier_judiciaire">Casier judiciaire</option>
-            <option value="contrat">Contrat de travail</option>
-            <option value="autre">Autre</option>
+            {% for t in types_document %}
+            <option value="{{ t.pk }}">{{ t.nom }}</option>
+            {% endfor %}
           </select>
         </div>
         <div class="mb-3">
@@ -608,31 +605,24 @@ document.addEventListener('DOMContentLoaded', function () {
     fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
     fetch('/personnel/chauffeurs/' + chauffeurId + '/documents/upload/', { method: 'POST', body: fd })
-      .then(r => r.json())
-      .then(data => {
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
         spinner.classList.add('d-none');
         icon.classList.remove('d-none');
-        this.disabled = false;
+        document.getElementById('btn-upload-confirmer').disabled = false;
         if (data.success) {
-          uploadModal.hide();
-          // Reset form
-          document.getElementById('upload-type').value = '';
-          document.getElementById('upload-nom').value = '';
-          document.getElementById('upload-fichier').value = '';
-          document.getElementById('upload-expiration').value = '';
-          // Recharger la page sur l'onglet dossier
           window.location.href = window.location.pathname + '?tab=dossier';
         } else {
           alert.className = 'alert alert-danger';
           alert.textContent = data.error || 'Erreur lors de l\'upload.';
         }
       })
-      .catch(() => {
+      .catch(function(err) {
         spinner.classList.add('d-none');
         icon.classList.remove('d-none');
-        this.disabled = false;
+        document.getElementById('btn-upload-confirmer').disabled = false;
         alert.className = 'alert alert-danger';
-        alert.textContent = 'Erreur réseau. Veuillez réessayer.';
+        alert.textContent = 'Erreur : ' + (err.message || 'Veuillez réessayer.');
       });
   });
 

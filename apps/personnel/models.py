@@ -196,18 +196,27 @@ class Chauffeur(models.Model):
         return self.nom_complet
 
 
-class DocumentChauffeur(models.Model):
-    TYPE_CHOICES = [
-        ('cni', 'CNI (Carte Nationale d\'Identité)'),
-        ('permis', 'Permis de conduire'),
-        ('certificat_medical', 'Certificat médical'),
-        ('casier_judiciaire', 'Casier judiciaire'),
-        ('contrat', 'Contrat de travail'),
-        ('autre', 'Autre'),
-    ]
+class TypeDocumentChauffeur(models.Model):
+    nom = models.CharField(max_length=100, unique=True, verbose_name="Nom")
+    actif = models.BooleanField(default=True, verbose_name="Actif")
 
+    class Meta:
+        verbose_name = "Type de document chauffeur"
+        verbose_name_plural = "Types de documents chauffeur"
+        ordering = ['nom']
+
+    def __str__(self):
+        return self.nom
+
+
+class DocumentChauffeur(models.Model):
     chauffeur = models.ForeignKey(Chauffeur, on_delete=models.CASCADE, related_name='documents')
-    type_document = models.CharField(max_length=30, choices=TYPE_CHOICES, verbose_name="Type de document")
+    type_document = models.ForeignKey(
+        TypeDocumentChauffeur,
+        on_delete=models.PROTECT,
+        verbose_name="Type de document",
+        related_name='documents'
+    )
     nom = models.CharField(max_length=200, verbose_name="Nom du document", blank=True)
     fichier = models.FileField(upload_to='chauffeurs/documents/', verbose_name="Fichier")
     date_expiration = models.DateField(null=True, blank=True, verbose_name="Date d'expiration")
@@ -219,10 +228,14 @@ class DocumentChauffeur(models.Model):
 
     class Meta:
         verbose_name = "Document chauffeur"
-        ordering = ['type_document', '-date_ajout']
+        ordering = ['type_document__nom', '-date_ajout']
 
     def __str__(self):
-        return f"{self.get_type_document_display()} — {self.chauffeur.nom_complet}"
+        return f"{self.type_document.nom} — {self.chauffeur.nom_complet}"
+
+    @property
+    def type_nom(self):
+        return self.type_document.nom if self.type_document else ''
 
     @property
     def est_expire(self):

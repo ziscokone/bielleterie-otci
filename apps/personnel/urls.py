@@ -25,6 +25,12 @@ urlpatterns = [
     path('documents/<int:doc_id>/telecharger/', views.telecharger_document_chauffeur, name='telecharger_document_chauffeur'),
     path('documents/<int:doc_id>/supprimer/', views.supprimer_document_chauffeur, name='supprimer_document_chauffeur'),
 
+    # Types de document chauffeur
+    path('types-document/', views.TypeDocumentChauffeurListView.as_view(), name='type_document_list'),
+    path('types-document/ajouter/', views.TypeDocumentChauffeurCreateView.as_view(), name='type_document_create'),
+    path('types-document/<int:pk>/modifier/', views.TypeDocumentChauffeurUpdateView.as_view(), name='type_document_update'),
+    path('types-document/<int:pk>/supprimer/', views.TypeDocumentChauffeurDeleteView.as_view(), name='type_document_delete'),
+
     # Convoyeurs
     path('convoyeurs/', views.ConvoyeurListView.as_view(), name='convoyeur_list'),
     path('convoyeurs/ajouter/', views.ConvoyeurCreateView.as_view(), name='convoyeur_create'),

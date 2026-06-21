@@ -189,9 +189,16 @@
         </div>
       </div>
     </div>
-    <a href="{% url 'personnel:chauffeur_create' %}" class="btn btn-success fw-semibold">
-      <i class="bi bi-plus-circle me-1"></i>Nouveau Chauffeur
-    </a>
+    <div class="d-flex gap-2 align-items-center">
+      {% if request.user.is_superuser %}
+      <a href="{% url 'personnel:type_document_list' %}" class="btn btn-info fw-semibold" title="Gérer les types de document">
+        <i class="bi bi-tags me-1"></i>Types de document
+      </a>
+      {% endif %}
+      <a href="{% url 'personnel:chauffeur_create' %}" class="btn btn-success fw-semibold">
+        <i class="bi bi-plus-circle me-1"></i>Nouveau Chauffeur
+      </a>
+    </div>
   </div>
 
   <!-- ── Filtres ───────────────────────────────────────────────── -->
