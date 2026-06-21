@@ -26,6 +26,8 @@
     --color-siege-reserve: #FFF3CD;
     --color-siege-paye: #FF6600;
     --color-siege-non-vendable: #6C757D;
+    --color-siege-gratuit-attente: #a5f3fc;
+    --color-siege-gratuit: #0891b2;
 
     /* Bordures et ombres */
     --color-border: #DEE2E6;
@@ -425,6 +427,19 @@ a:hover {
 
 .siege.paye {
     background-color: var(--color-siege-paye);
+    color: white;
+    cursor: not-allowed;
+}
+
+.siege.gratuit_en_attente {
+    background-color: var(--color-siege-gratuit-attente);
+    color: #0e7490;
+    cursor: not-allowed;
+    border-color: #0891b2;
+}
+
+.siege.gratuit {
+    background-color: var(--color-siege-gratuit);
     color: white;
     cursor: not-allowed;
 }

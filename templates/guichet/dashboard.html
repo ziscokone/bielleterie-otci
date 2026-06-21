@@ -297,6 +297,7 @@
                 <th>Véhicule</th>
                 <th>Remplissage</th>
                 <th>Recette Billets</th>
+                <th>Statut</th>
                 <th></th>
               </tr>
             </thead>
@@ -349,6 +350,25 @@
                     {{ voyage.recette_billets|floatformat:0 }} F
                   {% else %}
                     <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if voyage.statut == 'programme' %}
+                    <span class="badge" style="background:#dbeafe;color:#1e40af;font-size:11px;">
+                      <i class="bi bi-clock me-1"></i>Programmé
+                    </span>
+                  {% elif voyage.statut == 'en_cours' %}
+                    <span class="badge" style="background:#fef3c7;color:#92400e;font-size:11px;">
+                      <i class="bi bi-play-circle me-1"></i>En cours
+                    </span>
+                  {% elif voyage.statut == 'termine' %}
+                    <span class="badge" style="background:#dcfce7;color:#166534;font-size:11px;">
+                      <i class="bi bi-check-circle me-1"></i>Terminé
+                    </span>
+                  {% elif voyage.statut == 'annule' %}
+                    <span class="badge" style="background:#fee2e2;color:#991b1b;font-size:11px;">
+                      <i class="bi bi-x-circle me-1"></i>Annulé
+                    </span>
                   {% endif %}
                 </td>
                 <td>

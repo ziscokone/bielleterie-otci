@@ -3,9 +3,10 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q, Sum, Count
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.core.paginator import Paginator
 from django.utils import timezone
 import json
 import logging
@@ -824,6 +825,73 @@ class RentabiliteVehiculeView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
         context['benefice_net_global'] = (total_recette_billets + total_recette_bagages) - total_depenses - total_reparations
 
         return context
+
+
+# ==================== REPARATIONS AJAX ====================
+
+@require_http_methods(["GET"])
+def reparations_vehicule_ajax(request, pk):
+    """Retourne le partial des réparations paginé (10/page) avec filtre optionnel par statut."""
+    from django.contrib.auth.decorators import login_required
+    if not request.user.is_authenticated:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden()
+
+    vehicule = get_object_or_404(Vehicule, pk=pk)
+    statut_filtre = request.GET.get('statut', '')
+    page_num = request.GET.get('page', 1)
+
+    qs = vehicule.reparations.prefetch_related('lignes__type_reparation').order_by('-date_reparation')
+    if statut_filtre:
+        qs = qs.filter(statut=statut_filtre)
+
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(page_num)
+
+    nb_tous      = vehicule.reparations.count()
+    nb_terminee  = vehicule.reparations.filter(statut='terminee').count()
+    nb_en_cours  = vehicule.reparations.filter(statut='en_cours').count()
+    nb_en_attente = vehicule.reparations.filter(statut='en_attente').count()
+
+    return render(request, 'vehicules/partials/reparations_historique.html', {
+        'vehicule': vehicule,
+        'reparations': page_obj,
+        'page_obj': page_obj,
+        'statut_filtre': statut_filtre,
+        'nb_tous': nb_tous,
+        'nb_terminee': nb_terminee,
+        'nb_en_cours': nb_en_cours,
+        'nb_en_attente': nb_en_attente,
+    })
+
+
+@require_http_methods(["GET"])
+def entretien_historique_ajax(request, pk):
+    """Retourne le tableau historique des entretiens kilométriques, paginé (10/page)."""
+    if not request.user.is_authenticated:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden()
+
+    vehicule = get_object_or_404(Vehicule, pk=pk)
+    page_num = request.GET.get('page', 1)
+
+    lignes = LigneIntervention.objects.filter(
+        reparation__vehicule=vehicule,
+        kilometrage__isnull=False,
+    ).filter(
+        Q(type_reparation__necessite_kilometrage=True) |
+        Q(type_reparation__intervalle_km_defaut__isnull=False)
+    ).select_related(
+        'type_reparation', 'reparation'
+    ).order_by('-reparation__date_reparation')
+
+    paginator = Paginator(lignes, 10)
+    page_obj = paginator.get_page(page_num)
+
+    return render(request, 'vehicules/partials/entretien_historique_table.html', {
+        'vehicule': vehicule,
+        'page_obj': page_obj,
+    })
 
 
 # ==================== API AJAX ====================

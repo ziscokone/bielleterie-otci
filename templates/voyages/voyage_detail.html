@@ -386,6 +386,16 @@
                 <span class="statut-reporte"><i class="bi bi-arrow-repeat me-1"></i>Reporté</span>
               {% elif billet.statut == 'rembourse' %}
                 <span class="statut-rembourse"><i class="bi bi-cash-coin me-1"></i>Remboursé</span>
+              {% elif billet.statut == 'gratuit' %}
+                <span style="background:#dcfce7;color:#15803d;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+                  <i class="bi bi-ticket-perforated-fill"></i>Gratuit
+                </span>
+              {% elif billet.statut == 'gratuit_en_attente' %}
+                <span style="background:#fef9c3;color:#854d0e;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+                  <i class="bi bi-hourglass-split"></i>Gratuit (attente)
+                </span>
+              {% elif billet.statut == 'reserve' %}
+                <span class="statut-reserve"><i class="bi bi-bookmark me-1"></i>Réservé</span>
               {% else %}
                 <span class="statut-reserve"><i class="bi bi-bookmark me-1"></i>Réservé</span>
               {% endif %}
@@ -447,6 +457,85 @@
   </div>
 
 </div>
+
+<!-- ── Section Demandes de tickets gratuits ────────────────────── -->
+{% if demandes_gratuit %}
+<div style="margin:28px 0 0;background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#0891b2,#0e7490);padding:16px 24px;display:flex;align-items:center;gap:12px;">
+        <i class="bi bi-ticket-perforated-fill" style="font-size:1.4rem;color:#fff;"></i>
+        <div style="color:#fff;">
+            <div style="font-size:15px;font-weight:700;line-height:1.2;">Demandes de Tickets Gratuits</div>
+            <div style="font-size:12px;opacity:.85;">{{ nb_demandes_gratuit }} demande{{ nb_demandes_gratuit|pluralize }} en attente d'approbation</div>
+        </div>
+        <span class="badge bg-warning text-dark ms-auto" style="font-size:13px;padding:6px 14px;border-radius:20px;">
+            {{ nb_demandes_gratuit }} en attente
+        </span>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0" style="font-size:13px;">
+            <thead>
+                <tr style="background:#f0f9ff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#0e7490;">
+                    <th style="padding:10px 16px;">N° Ticket</th>
+                    <th style="padding:10px 16px;">Passager</th>
+                    <th style="padding:10px 16px;">Siège</th>
+                    <th style="padding:10px 16px;">Destination</th>
+                    <th style="padding:10px 16px;">Motif</th>
+                    <th style="padding:10px 16px;">Demandé par</th>
+                    <th style="padding:10px 16px;">Date</th>
+                    {% if request.user.is_super_admin or request.user.is_pdg or request.user.is_manager or request.user.is_chef_gare %}
+                    <th style="padding:10px 16px;text-align:center;">Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for demande in demandes_gratuit %}
+                <tr style="border-bottom:1px solid #e0f2fe;" id="demande-gratuit-row-{{ demande.pk }}">
+                    <td style="padding:12px 16px;font-weight:700;color:#0e7490;">{{ demande.billet.numero }}</td>
+                    <td style="padding:12px 16px;">
+                        <div class="fw-semibold">{{ demande.billet.client_nom }}</div>
+                        <div style="font-size:11px;color:#6b7280;">{{ demande.billet.client_telephone }}</div>
+                    </td>
+                    <td style="padding:12px 16px;font-weight:600;">N° {{ demande.billet.numero_siege }}</td>
+                    <td style="padding:12px 16px;">
+                        {% if demande.billet.destination %}
+                            {{ demande.billet.destination.ville_arrivee }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td style="padding:12px 16px;max-width:200px;">
+                        {% if demande.motif %}
+                            <span style="color:#374151;font-size:12px;">{{ demande.motif }}</span>
+                        {% else %}
+                            <span style="color:#9ca3af;font-style:italic;font-size:12px;">Aucun motif</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:12px 16px;font-size:12px;color:#6b7280;">{{ demande.demande_par.get_full_name|default:demande.demande_par.username }}</td>
+                    <td style="padding:12px 16px;font-size:12px;color:#6b7280;">{{ demande.date_demande|date:"d/m/Y H:i" }}</td>
+                    {% if request.user.is_super_admin or request.user.is_pdg or request.user.is_manager or request.user.is_chef_gare %}
+                    <td style="padding:12px 16px;text-align:center;">
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn-traiter-gratuit"
+                                    data-demande-id="{{ demande.pk }}"
+                                    data-action="approuver"
+                                    style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;border-radius:7px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;">
+                                <i class="bi bi-check-lg me-1"></i>Approuver
+                            </button>
+                            <button class="btn-traiter-gratuit"
+                                    data-demande-id="{{ demande.pk }}"
+                                    data-action="rejeter"
+                                    style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:7px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;">
+                                <i class="bi bi-x-lg me-1"></i>Rejeter
+                            </button>
+                        </div>
+                        <div class="gratuit-msg d-none mt-1" style="font-size:11px;"></div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 
 <!-- Modal d'impression duplicata -->
 <div class="modal fade" id="duplicataModal" tabindex="-1">
@@ -1059,7 +1148,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="ticket-row"><span>Date:</span><span>${billet.date_depart}</span></div>
                         <div class="ticket-row"><span>Heure:</span><span>${billet.heure_depart}</span></div>
                         <hr>
-                        <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
+                        <div class="ticket-row ticket-montant">
+                            <span>Montant:</span>
+                            ${(billet.statut === 'gratuit' || billet.statut === 'gratuit_en_attente')
+                                ? `<strong style="background:#16a34a;color:#fff;padding:2px 10px;border-radius:6px;font-size:13px;letter-spacing:1px;">GRATUIT</strong>`
+                                : `<strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong>`
+                            }
+                        </div>
                         <div class="ticket-row"><span>Paiement:</span><strong>${billet.moyen_paiement_display || 'Cash'}</strong></div>
                     </div>
         `;
@@ -2449,6 +2544,44 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => div.classList.add('d-none'), 5000);
         }
     }
+});
+
+// ── Traitement demandes gratuit ───────────────────────────────────
+document.querySelectorAll('.btn-traiter-gratuit').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const demandeId = this.dataset.demandeId;
+        const action = this.dataset.action;
+        const row = document.getElementById(`demande-gratuit-row-${demandeId}`);
+        const msgDiv = row ? row.querySelector('.gratuit-msg') : null;
+
+        if (!confirm(action === 'approuver' ? 'Approuver ce ticket gratuit ?' : 'Rejeter cette demande ?')) return;
+
+        this.disabled = true;
+        fetch(`/voyages/ticket-gratuit/${demandeId}/traiter/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({ action: action })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (row) {
+                    row.style.opacity = '.4';
+                    row.style.transition = 'opacity .4s';
+                    if (msgDiv) {
+                        msgDiv.textContent = action === 'approuver' ? '✓ Approuvé' : '✗ Rejeté';
+                        msgDiv.style.color = action === 'approuver' ? '#16a34a' : '#dc2626';
+                        msgDiv.classList.remove('d-none');
+                    }
+                    setTimeout(() => row.remove(), 1200);
+                }
+            } else {
+                alert(data.error || 'Erreur');
+                this.disabled = false;
+            }
+        })
+        .catch(() => { alert('Erreur réseau'); this.disabled = false; });
+    });
 });
 </script>
 {% endblock %}

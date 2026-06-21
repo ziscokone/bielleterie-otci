@@ -36,4 +36,9 @@ urlpatterns = [
     path('billets/<int:billet_id>/remboursement/demander/', views.demander_remboursement, name='demander_remboursement'),
     path('remboursements/<int:demande_id>/traiter/', views.traiter_remboursement, name='traiter_remboursement'),
     path('remboursements/', views.ListeRemboursementsView.as_view(), name='liste_remboursements'),
+
+    # Tickets gratuits
+    path('<int:voyage_id>/ticket-gratuit/creer/', views.creer_ticket_gratuit, name='creer_ticket_gratuit'),
+    path('ticket-gratuit/<int:demande_id>/traiter/', views.traiter_ticket_gratuit, name='traiter_ticket_gratuit'),
+    path('rapports/tickets-gratuits/', views.RapportTicketsGratuitView.as_view(), name='rapport_tickets_gratuit'),
 ]

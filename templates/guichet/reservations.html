@@ -279,7 +279,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="ticket-row"><span>Date:</span><span>${billet.date_depart}</span></div>
                     <div class="ticket-row"><span>Heure:</span><span>${billet.heure_depart}</span></div>
                     <hr>
-                    <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
+                    <div class="ticket-row ticket-montant">
+                        <span>Montant:</span>
+                        ${(billet.statut === 'gratuit' || billet.statut === 'gratuit_en_attente')
+                            ? `<strong style="background:#16a34a;color:#fff;padding:2px 10px;border-radius:6px;font-size:13px;letter-spacing:1px;">GRATUIT</strong>`
+                            : `<strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong>`
+                        }
+                    </div>
                     <div class="ticket-row"><span>Paiement:</span><strong>${billet.moyen_paiement_display || 'Cash'}</strong></div>
                 </div>
             </div>`;

@@ -215,6 +215,93 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 
 /* ── Tab pane ──────────────────────────────────────────── */
 .tab-pane-content { padding: 28px 32px; }
+
+/* ── Réparations partial ────────────────────────────────── */
+.rep-stat-card {
+    border-radius: 10px; border: 1px solid #e5e7eb;
+    padding: 16px; text-align: center; background: #fff;
+    transition: box-shadow 0.15s;
+}
+.rep-stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.rep-stat-val { font-size: 1.4rem; font-weight: 700; line-height: 1; margin-top: 8px; }
+.rep-stat-lbl { font-size: 11px; color: #6b7280; margin-top: 4px; }
+
+.rep-filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+.rep-pill {
+    border: 2px solid #e5e7eb; border-radius: 20px; padding: 4px 14px;
+    font-size: 12px; font-weight: 600; background: #fff; color: #6b7280;
+    cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px;
+}
+.rep-pill:hover    { border-color: var(--color-accent); color: var(--color-accent); }
+.rep-pill.active   { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+.rep-pill.p-term.active   { background: var(--color-success); border-color: var(--color-success); }
+.rep-pill.p-cours.active  { background: var(--color-warning); border-color: var(--color-warning); }
+.rep-pill.p-attente.active { background: #3b82f6; border-color: #3b82f6; }
+
+.timeline { position: relative; padding-left: 32px; }
+.timeline::before {
+    content: ''; position: absolute; left: 10px; top: 8px; bottom: 8px;
+    width: 2px; background: #e5e7eb; border-radius: 2px;
+}
+.tl-point {
+    position: absolute; left: -32px; top: 16px;
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 3px solid #fff; box-shadow: 0 0 0 2px #e5e7eb;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: #fff; flex-shrink: 0;
+}
+.tl-point.terminee  { background: var(--color-success); box-shadow: 0 0 0 2px var(--color-success); }
+.tl-point.en_cours  { background: var(--color-warning); box-shadow: 0 0 0 2px var(--color-warning); }
+.tl-point.en_attente { background: #3b82f6; box-shadow: 0 0 0 2px #3b82f6; }
+
+.rep-card {
+    position: relative; border-radius: 10px; border: 1px solid #e5e7eb;
+    margin-bottom: 12px; overflow: hidden; transition: box-shadow 0.15s, transform 0.1s;
+}
+.rep-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); transform: translateX(2px); }
+.rep-card.terminee   { background: #f0fdf4; border-color: #bbf7d0; }
+.rep-card.en_cours   { background: #fefce8; border-color: #fde68a; }
+.rep-card.en_attente { background: #eff6ff; border-color: #bfdbfe; }
+.rep-card-body { padding: 14px 16px; }
+.rep-main-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.rep-left  { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.rep-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+.rep-top-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rep-date { font-weight: 700; font-size: 13px; color: #111827; white-space: nowrap; }
+.rep-type-badge {
+    background: rgba(255,255,255,0.7); border: 1px solid #d1d5db;
+    border-radius: 12px; padding: 2px 10px; font-size: 11px; font-weight: 600; color: #374151;
+}
+.rep-statut {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 12px; padding: 2px 10px; font-size: 11px; font-weight: 600;
+}
+.rep-statut.terminee   { background: #dcfce7; color: #166534; }
+.rep-statut.en_cours   { background: #fef3c7; color: #92400e; }
+.rep-statut.en_attente { background: #dbeafe; color: #1e40af; }
+.rep-garage { font-size: 12px; color: #374151; font-weight: 600; }
+.rep-desc   { font-size: 12px; color: #6b7280; }
+.rep-montant { font-size: 1rem; font-weight: 800; color: var(--color-accent); white-space: nowrap; }
+.rep-actions { display: flex; gap: 4px; }
+.btn-action-sm {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; border: 1px solid #e5e7eb;
+    background: rgba(255,255,255,0.8); color: #6b7280;
+    transition: all 0.15s; text-decoration: none;
+}
+.btn-action-sm:hover           { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.btn-action-sm.view:hover { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.btn-action-sm.edit:hover { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+.btn-action-sm.del:hover  { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.rep-total-bar {
+    background: #1e3260; border-radius: 10px; padding: 12px 20px;
+    color: #fff; display: flex; justify-content: space-between; align-items: center;
+    margin-top: 16px; font-size: 13px;
+}
+.rep-total-bar .total-val { font-size: 1.1rem; font-weight: 800; }
+.rep-empty { text-align: center; padding: 48px 20px; color: #9ca3af; }
+.rep-empty i { font-size: 2.5rem; display: block; margin-bottom: 12px; opacity: 0.4; }
 </style>
 {% endblock %}
 
@@ -438,8 +525,11 @@ textarea.form-control { resize: vertical; min-height: 90px; }
         <!-- ══ Onglet : Réparations ══ -->
         {% if form.instance.pk %}
         <div id="tab-reparations" style="display:none;">
-            <div class="tab-pane-content">
-                {% include 'vehicules/partials/reparations_historique.html' with vehicule=form.instance %}
+            <div class="tab-pane-content" id="rep-ajax-container">
+                <div class="text-center py-5" id="rep-spinner">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2" style="font-size:13px;">Chargement des réparations…</p>
+                </div>
             </div>
         </div>
 
@@ -460,16 +550,53 @@ textarea.form-control { resize: vertical; min-height: 90px; }
     const tabs = document.querySelectorAll('.veh-tab-btn');
     if (!tabs.length) return;
 
+    {% if form.instance.pk %}
+    const vehiculeId = {{ form.instance.pk }};
+    let repLoaded = false;
+    let entretienLoaded = false;
+
+    window.loadReparations = function (statut, page) {
+        const container = document.getElementById('rep-ajax-container');
+        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="text-muted mt-2" style="font-size:13px;">Chargement…</p></div>';
+        fetch(`/vehicules/${vehiculeId}/reparations-ajax/?statut=${statut}&page=${page}`)
+            .then(r => r.text())
+            .then(html => { container.innerHTML = html; })
+            .catch(() => {
+                container.innerHTML = '<div class="alert alert-danger m-3">Erreur lors du chargement des réparations.</div>';
+            });
+    };
+
+    window.loadEntretienHistorique = function (page) {
+        const container = document.getElementById('entretien-historique-container');
+        container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
+        fetch(`/vehicules/${vehiculeId}/entretien-ajax/?page=${page}`)
+            .then(r => r.text())
+            .then(html => { container.innerHTML = html; })
+            .catch(() => {
+                container.innerHTML = '<div class="alert alert-danger mt-2">Erreur lors du chargement.</div>';
+            });
+    };
+    {% endif %}
+
     tabs.forEach(btn => {
         btn.addEventListener('click', function () {
-            // Désactiver tous les onglets
             tabs.forEach(t => t.classList.remove('active'));
             document.querySelectorAll('#tab-infos, #tab-reparations, #tab-entretien')
                     .forEach(p => p.style.display = 'none');
 
-            // Activer celui cliqué
             this.classList.add('active');
             document.getElementById(this.dataset.target).style.display = 'block';
+
+            {% if form.instance.pk %}
+            if (this.dataset.target === 'tab-reparations' && !repLoaded) {
+                repLoaded = true;
+                loadReparations('', 1);
+            }
+            if (this.dataset.target === 'tab-entretien' && !entretienLoaded) {
+                entretienLoaded = true;
+                loadEntretienHistorique(1);
+            }
+            {% endif %}
         });
     });
 })();

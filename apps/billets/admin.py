@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Billet, HistoriqueReport
+from .models import Billet, HistoriqueReport, DemandeTicketGratuit
 
 
 @admin.register(HistoriqueReport)
@@ -43,3 +43,12 @@ class BilletAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         """Les billets doivent être créés via l'interface guichet."""
         return False
+
+
+@admin.register(DemandeTicketGratuit)
+class DemandeTicketGratuitAdmin(admin.ModelAdmin):
+    list_display = ('billet', 'statut', 'demande_par', 'traite_par', 'date_demande', 'date_traitement')
+    list_filter = ('statut', 'date_demande')
+    search_fields = ('billet__numero', 'billet__client_nom', 'motif')
+    ordering = ('-date_demande',)
+    readonly_fields = ('billet', 'demande_par', 'traite_par', 'date_demande', 'date_traitement')

@@ -82,6 +82,14 @@
                                 <div class="siege-legende-color" style="background-color: var(--color-siege-non-vendable);"></div>
                                 <span>Conducteur</span>
                             </div>
+                            <div class="siege-legende-item">
+                                <div class="siege-legende-color" style="background-color:var(--color-siege-gratuit-attente);border:2px solid #0891b2;"></div>
+                                <span>Gratuit (attente)</span>
+                            </div>
+                            <div class="siege-legende-item">
+                                <div class="siege-legende-color" style="background-color:var(--color-siege-gratuit);"></div>
+                                <span>Gratuit</span>
+                            </div>
                         </div>
                         <a href="{% url 'voyages:voyage_detail' voyage.pk %}" class="btn btn-sm btn-outline-primary" title="Voir les détails du voyage">
                             <i class="bi bi-eye me-1"></i>Voir détails
@@ -296,14 +304,32 @@
 
                         <hr>
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg" name="payer" value="true">
-                                <i class="bi bi-cash me-2"></i>
-                                Vendre et imprimer
+                        <div style="display:flex;gap:8px;">
+                            <!-- Bouton 1 : Vendre et imprimer -->
+                            <button type="submit" name="payer" value="true"
+                                    style="flex:1;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:10px;padding:12px 8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .1s,box-shadow .15s;box-shadow:0 3px 10px rgba(22,163,74,.3);"
+                                    onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 5px 16px rgba(22,163,74,.4)'"
+                                    onmouseout="this.style.transform='';this.style.boxShadow='0 3px 10px rgba(22,163,74,.3)'">
+                                <i class="bi bi-printer-fill" style="font-size:14px;flex-shrink:0;"></i>
+                                <span>Vendre<br>et imprimer</span>
                             </button>
-                            <button type="submit" class="btn btn-outline-warning" name="payer" value="false">
-                                <i class="bi bi-bookmark me-2"></i>
-                                Réserver seulement
+
+                            <!-- Bouton 2 : Réserver sans impression -->
+                            <button type="submit" name="payer" value="false"
+                                    style="flex:1;background:linear-gradient(135deg,#d97706,#b45309);color:#fff;border:none;border-radius:10px;padding:12px 8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .1s,box-shadow .15s;box-shadow:0 3px 10px rgba(217,119,6,.3);"
+                                    onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 5px 16px rgba(217,119,6,.4)'"
+                                    onmouseout="this.style.transform='';this.style.boxShadow='0 3px 10px rgba(217,119,6,.3)'">
+                                <i class="bi bi-bookmark-fill" style="font-size:14px;flex-shrink:0;"></i>
+                                <span>Réserver<br>sans impression</span>
+                            </button>
+
+                            <!-- Bouton 3 : Ticket Gratuit -->
+                            <button type="button" id="btnOuvrirGratuit"
+                                    style="flex:1;background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;border:none;border-radius:10px;padding:12px 8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .1s,box-shadow .15s;box-shadow:0 3px 10px rgba(8,145,178,.3);"
+                                    onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 5px 16px rgba(8,145,178,.4)'"
+                                    onmouseout="this.style.transform='';this.style.boxShadow='0 3px 10px rgba(8,145,178,.3)'">
+                                <i class="bi bi-ticket-perforated-fill" style="font-size:14px;flex-shrink:0;"></i>
+                                <span>Ticket<br>Gratuit</span>
                             </button>
                         </div>
                     </form>
@@ -316,6 +342,50 @@
 <!-- Container pour les tickets (toujours présent, caché si pas utilisé) -->
 <div id="ticketsContainer" style="position: absolute; left: -9999px;">
     <!-- Les tickets seront insérés ici -->
+</div>
+
+<!-- ── Modal Ticket Gratuit ─────────────────────────────── -->
+<div class="modal fade" id="modalTicketGratuit" tabindex="-1" aria-labelledby="modalGratuitLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:14px;border:none;overflow:hidden;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;border:none;padding:18px 24px;">
+                <h5 class="modal-title fw-bold" id="modalGratuitLabel">
+                    <i class="bi bi-ticket-perforated-fill me-2"></i>Demande de Ticket Gratuit
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Récap du ticket -->
+                <div id="gratuitRecap" style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:13px;">
+                    <div class="fw-bold mb-1" style="color:#0e7490;">
+                        <i class="bi bi-info-circle me-1"></i>Récapitulatif
+                    </div>
+                    <div id="gratuitRecapContent" style="color:#374151;line-height:1.8;"></div>
+                </div>
+
+                <!-- Motif (optionnel) -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:13px;">
+                        <i class="bi bi-chat-left-text me-1"></i>Motif <span class="text-muted fw-normal">(optionnel)</span>
+                    </label>
+                    <textarea id="gratuitMotif" class="form-control" rows="3"
+                              placeholder="Ex : Employé de la compagnie, autorité, invité VIP…"
+                              style="border-radius:8px;font-size:13px;resize:none;"></textarea>
+                </div>
+
+                <div id="gratuitMessage" class="alert d-none mt-2" style="font-size:13px;border-radius:8px;"></div>
+            </div>
+            <div class="modal-footer" style="border:none;padding:16px 24px 20px;">
+                <button type="button" class="btn btn-light fw-semibold" data-bs-dismiss="modal" style="border-radius:8px;">
+                    <i class="bi bi-x-circle me-1"></i>Annuler
+                </button>
+                <button type="button" id="confirmGratuitBtn"
+                        style="background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;">
+                    <i class="bi bi-send-fill me-1"></i>Envoyer la demande
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Modal vendre à un autre client -->
@@ -601,7 +671,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Ne pas permettre la sélection des sièges non disponibles en mode unitaire
             if (modeUnitaire.checked) {
-                if (siege.classList.contains('paye') || siege.classList.contains('non-vendable')) {
+                if (siege.classList.contains('paye') || siege.classList.contains('non-vendable') ||
+                    siege.classList.contains('gratuit_en_attente') || siege.classList.contains('gratuit')) {
                     return;
                 }
 
@@ -722,7 +793,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="ticket-row"><span>Date:</span><span>${billet.date_depart}</span></div>
                     <div class="ticket-row"><span>Heure:</span><span>${billet.heure_depart}</span></div>
                     <hr>
-                    <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
+                    <div class="ticket-row ticket-montant">
+                        <span>Montant:</span>
+                        ${(billet.statut === 'gratuit' || billet.statut === 'gratuit_en_attente')
+                            ? `<strong style="background:#16a34a;color:#fff;padding:2px 10px;border-radius:6px;font-size:13px;letter-spacing:1px;">GRATUIT</strong>`
+                            : `<strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong>`
+                        }
+                    </div>
                     <div class="ticket-row"><span>Paiement:</span><strong>${billet.moyen_paiement_display || 'Cash'}</strong></div>
                 </div>
             `;
@@ -806,7 +883,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="ticket-row"><span>Date:</span><span>${billet.date_depart}</span></div>
                     <div class="ticket-row"><span>Heure:</span><span>${billet.heure_depart}</span></div>
                     <hr>
-                    <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
+                    <div class="ticket-row ticket-montant">
+                        <span>Montant:</span>
+                        ${(billet.statut === 'gratuit' || billet.statut === 'gratuit_en_attente')
+                            ? `<strong style="background:#16a34a;color:#fff;padding:2px 10px;border-radius:6px;font-size:13px;letter-spacing:1px;">GRATUIT</strong>`
+                            : `<strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong>`
+                        }
+                    </div>
                 </div>
             `;
 
@@ -1073,5 +1156,99 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// ── Ticket Gratuit ───────────────────────────────────────
+(function () {
+    const btnOuvrir = document.getElementById('btnOuvrirGratuit');
+    if (!btnOuvrir) return;
+
+    const modal = new bootstrap.Modal(document.getElementById('modalTicketGratuit'));
+    const confirmBtn = document.getElementById('confirmGratuitBtn');
+    const motifInput = document.getElementById('gratuitMotif');
+    const recapDiv = document.getElementById('gratuitRecapContent');
+    const msgDiv = document.getElementById('gratuitMessage');
+
+    const voyageId = {{ voyage.pk }};
+
+    function showMsg(txt, type) {
+        msgDiv.className = `alert alert-${type} mt-2`;
+        msgDiv.textContent = txt;
+        msgDiv.classList.remove('d-none');
+    }
+
+    function hideMsg() { msgDiv.classList.add('d-none'); }
+
+    btnOuvrir.addEventListener('click', function () {
+        const clientNom = document.getElementById('clientNom')?.value?.trim() || '';
+        const clientTel = document.getElementById('clientTelephone')?.value?.trim() || '';
+        const destSelect = document.getElementById('destinationSelect') || document.querySelector('[name="destination_id"]');
+        const destTexte = destSelect ? destSelect.options[destSelect.selectedIndex]?.text : '';
+        const siegeSelected = document.querySelector('.siege.selected');
+        const numeroSiege = siegeSelected ? siegeSelected.dataset.numero : '';
+
+        if (!clientNom || !clientTel) {
+            alert('Veuillez renseigner le nom et le téléphone du client avant de demander un ticket gratuit.');
+            return;
+        }
+        if (!numeroSiege) {
+            alert('Veuillez sélectionner un siège avant de demander un ticket gratuit.');
+            return;
+        }
+        if (!destSelect || !destSelect.value) {
+            alert('Veuillez sélectionner une destination.');
+            return;
+        }
+
+        recapDiv.innerHTML = `
+            <span class="fw-semibold">Passager :</span> ${clientNom} (${clientTel})<br>
+            <span class="fw-semibold">Siège :</span> N° ${numeroSiege}<br>
+            <span class="fw-semibold">Destination :</span> ${destTexte}
+        `;
+        motifInput.value = '';
+        hideMsg();
+        modal.show();
+    });
+
+    confirmBtn.addEventListener('click', function () {
+        hideMsg();
+        const clientNom = document.getElementById('clientNom')?.value?.trim() || '';
+        const clientTel = document.getElementById('clientTelephone')?.value?.trim() || '';
+        const destSelect = document.getElementById('destinationSelect') || document.querySelector('[name="destination_id"]');
+        const destId = destSelect ? destSelect.value : '';
+        const siegeSelected = document.querySelector('.siege.selected');
+        const numeroSiege = siegeSelected ? siegeSelected.dataset.numero : '';
+
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Envoi…';
+
+        fetch(`/voyages/${voyageId}/ticket-gratuit/creer/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({
+                client_nom: clientNom,
+                client_telephone: clientTel,
+                destination_id: destId,
+                numero_siege: parseInt(numeroSiege),
+                motif: motifInput.value.trim(),
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showMsg('✓ ' + data.message, 'success');
+                setTimeout(() => { modal.hide(); location.reload(); }, 1800);
+            } else {
+                showMsg(data.error || 'Erreur lors de la demande', 'danger');
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="bi bi-send-fill me-1"></i>Envoyer la demande';
+            }
+        })
+        .catch(() => {
+            showMsg('Erreur réseau', 'danger');
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="bi bi-send-fill me-1"></i>Envoyer la demande';
+        });
+    });
+})();
 </script>
 {% endblock %}

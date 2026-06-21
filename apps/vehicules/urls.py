@@ -35,6 +35,10 @@ urlpatterns = [
     path('types-reparation/<int:pk>/modifier/', views.TypeReparationUpdateView.as_view(), name='type_reparation_update'),
     path('types-reparation/<int:pk>/supprimer/', views.TypeReparationDeleteView.as_view(), name='type_reparation_delete'),
 
+    # Réparations AJAX (pagination onglet fiche véhicule)
+    path('<int:pk>/reparations-ajax/', views.reparations_vehicule_ajax, name='reparations_ajax'),
+    path('<int:pk>/entretien-ajax/', views.entretien_historique_ajax, name='entretien_ajax'),
+
     # API AJAX
     path('api/types-reparation/', views.get_types_reparation, name='api_types_reparation'),
     path('api/vehicule/<int:pk>/km/', views.get_vehicule_km, name='api_vehicule_km'),

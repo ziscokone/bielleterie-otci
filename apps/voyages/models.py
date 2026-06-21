@@ -132,8 +132,9 @@ class Voyage(models.Model):
             return []
 
         sieges_vendables = self.vehicule.get_sieges_vendables()
-        # Exclure les billets reportés - seuls les billets 'reserve' et 'paye' comptent
-        sieges_pris = self.billets.exclude(statut__in=['reporte', 'rembourse']).values_list('numero_siege', flat=True)
+        sieges_pris = self.billets.exclude(
+            statut__in=['reporte', 'rembourse']
+        ).values_list('numero_siege', flat=True)
 
         return [s for s in sieges_vendables if s not in sieges_pris]
 
@@ -150,6 +151,12 @@ class Voyage(models.Model):
             self.billets.filter(statut='paye')
             .values_list('numero_siege', flat=True)
         )
+
+    def get_sieges_gratuits_en_attente(self):
+        return list(self.billets.filter(statut='gratuit_en_attente').values_list('numero_siege', flat=True))
+
+    def get_sieges_gratuits(self):
+        return list(self.billets.filter(statut='gratuit').values_list('numero_siege', flat=True))
 
     def get_nb_places_vendues(self):
         """Retourne le nombre de places payées."""
@@ -197,12 +204,18 @@ class Voyage(models.Model):
         disposition = self.vehicule.modele.get_disposition_pour_affichage()
         sieges_reserves = set(self.get_sieges_reserves())
         sieges_payes = set(self.get_sieges_payes())
+        sieges_gratuits_attente = set(self.get_sieges_gratuits_en_attente())
+        sieges_gratuits = set(self.get_sieges_gratuits())
 
         for rangee in disposition['rangees']:
             for siege in rangee['sieges']:
                 if siege['numero'] is not None:
                     if siege['numero'] in sieges_payes:
                         siege['statut'] = 'paye'
+                    elif siege['numero'] in sieges_gratuits:
+                        siege['statut'] = 'gratuit'
+                    elif siege['numero'] in sieges_gratuits_attente:
+                        siege['statut'] = 'gratuit_en_attente'
                     elif siege['numero'] in sieges_reserves:
                         siege['statut'] = 'reserve'
                     elif siege['type'] == 'non_vendable':

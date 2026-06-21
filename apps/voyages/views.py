@@ -19,7 +19,7 @@ from apps.compagnie.models import Compagnie
 from apps.personnel.models import Chauffeur, Convoyeur
 from apps.comptabilite.models import TypeDepense, Depense
 from apps.vehicules.models import Vehicule
-from apps.billets.models import Billet, HistoriqueReport, DemandeRemboursement
+from apps.billets.models import Billet, HistoriqueReport, DemandeRemboursement, DemandeTicketGratuit
 
 
 class VoyageListView(GestionRequiredMixin, ListView):
@@ -111,6 +111,12 @@ class VoyageDetailView(GestionRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         voyage = self.object
 
+        # Transition automatique : si le jour J est arrivé et le voyage est encore "programmé"
+        from datetime import date as _date
+        if voyage.statut == 'programme' and voyage.date_depart <= _date.today():
+            voyage.statut = 'en_cours'
+            voyage.save(update_fields=['statut'])
+
         # Récupérer tous les billets du voyage
         billets = voyage.billets.select_related('guichetier').order_by('numero_siege')
         billets_payes = billets.filter(statut='paye')
@@ -128,6 +134,14 @@ class VoyageDetailView(GestionRequiredMixin, DetailView):
         context['nb_billets_payes'] = nb_payes
         context['nb_billets_reserves'] = nb_reserves
         context['nb_remboursements_en_attente'] = nb_remboursements_attente
+
+        # Demandes de tickets gratuits en attente
+        demandes_gratuit = DemandeTicketGratuit.objects.filter(
+            billet__voyage=voyage, statut='en_attente'
+        ).select_related('billet__destination', 'demande_par')
+        context['demandes_gratuit'] = demandes_gratuit
+        context['nb_demandes_gratuit'] = demandes_gratuit.count()
+
         context['montant_total'] = sum(b.montant for b in billets_payes)
 
         # Statistiques par moyen de paiement (uniquement billets payés)
@@ -226,8 +240,15 @@ class VoyageBordereauView(GestionRequiredMixin, TemplateView):
                 from django.http import HttpResponseForbidden
                 return HttpResponseForbidden("Accès non autorisé")
 
-        # Récupérer uniquement les billets payés (exclure réservés et reportés)
+        # Billets payés
         billets = voyage.billets.filter(statut='paye').select_related('guichetier', 'destination').order_by('numero_siege')
+
+        # Billets gratuits (approuvés)
+        billets_gratuits = voyage.billets.filter(statut='gratuit').select_related('guichetier', 'destination', 'demande_gratuit').order_by('numero_siege')
+        destinations_gratuits = {}
+        for bg in billets_gratuits:
+            ville = bg.destination.ville_arrivee if bg.destination else voyage.ligne.ville_arrivee
+            destinations_gratuits[ville] = destinations_gratuits.get(ville, 0) + 1
 
         # Calculer le recap destinations
         destinations_count = {}
@@ -250,8 +271,11 @@ class VoyageBordereauView(GestionRequiredMixin, TemplateView):
         context['billets'] = billets
         context['billets_payes'] = billets
         context['nb_billets_payes'] = billets.count()
-        context['nb_billets_reserves'] = 0  # Non affichés sur le bordereau
+        context['nb_billets_reserves'] = 0
         context['destinations_recap'] = destinations_recap
+        context['billets_gratuits'] = billets_gratuits
+        context['nb_billets_gratuits'] = billets_gratuits.count()
+        context['destinations_gratuits'] = sorted(destinations_gratuits.items(), key=lambda x: x[0])
         context['montant_total'] = montant_total_billets
         context['recette_bagages'] = recette_bagages
         context['total_recettes'] = total_recettes
@@ -286,8 +310,10 @@ class VoyageListePassagersView(GestionRequiredMixin, TemplateView):
                 from django.http import HttpResponseForbidden
                 return HttpResponseForbidden("Accès non autorisé")
 
-        # Récupérer uniquement les billets payés (exclure réservés et reportés)
-        billets = voyage.billets.filter(statut='paye').select_related('destination', 'guichetier').order_by('numero_siege')
+        # Billets payés + gratuits (approuvés)
+        billets = voyage.billets.filter(
+            statut__in=['paye', 'gratuit']
+        ).select_related('destination', 'guichetier').order_by('numero_siege')
 
         context['voyage'] = voyage
         context['billets'] = billets
@@ -1502,6 +1528,151 @@ def traiter_remboursement(request, demande_id):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
+def creer_ticket_gratuit(request, voyage_id):
+    """Crée un billet gratuit (en attente d'approbation) + la demande associée."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Non autorisé'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Méthode non autorisée'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Données invalides'}, status=400)
+
+    try:
+        voyage = get_object_or_404(Voyage, pk=voyage_id)
+        user = request.user
+
+        if not user.has_global_access and voyage.gare != user.gare:
+            return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
+
+        client_nom = data.get('client_nom', '').strip()
+        client_telephone = data.get('client_telephone', '').strip()
+        destination_id = data.get('destination_id')
+        numero_siege = data.get('numero_siege')
+        motif = data.get('motif', '').strip()
+
+        if not client_nom:
+            return JsonResponse({'success': False, 'error': 'Le nom du client est obligatoire'})
+        if not client_telephone:
+            return JsonResponse({'success': False, 'error': 'Le téléphone est obligatoire'})
+        if not numero_siege:
+            return JsonResponse({'success': False, 'error': 'Le numéro de siège est obligatoire'})
+        if not destination_id:
+            return JsonResponse({'success': False, 'error': 'La destination est obligatoire'})
+
+        from apps.destinations.models import Destination as DestModel
+        destination = get_object_or_404(DestModel, pk=destination_id, ligne=voyage.ligne)
+
+        # Vérifier que le siège est libre
+        siege_pris = voyage.billets.filter(
+            numero_siege=numero_siege
+        ).exclude(statut__in=['reporte', 'rembourse']).exists()
+        if siege_pris:
+            return JsonResponse({'success': False, 'error': f'Le siège {numero_siege} est déjà occupé'})
+
+        # Générer numéro de billet
+        import uuid
+        numero = f"GT-{voyage.pk}-{uuid.uuid4().hex[:6].upper()}"
+
+        billet = Billet.objects.create(
+            voyage=voyage,
+            destination=destination,
+            client_nom=client_nom,
+            client_telephone=client_telephone,
+            numero_siege=numero_siege,
+            montant=0,
+            statut='gratuit_en_attente',
+            moyen_paiement='cash',
+            guichetier=user,
+            numero=numero,
+            date_paiement=None,
+        )
+
+        DemandeTicketGratuit.objects.create(
+            billet=billet,
+            motif=motif,
+            demande_par=user,
+        )
+
+        from apps.clients.models import Client
+        client_obj, _ = Client.objects.get_or_create(
+            telephone=client_telephone,
+            defaults={'nom_complet': client_nom}
+        )
+        billet.client = client_obj
+        billet.save(update_fields=['client'])
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Demande de ticket gratuit créée — siège {numero_siege} réservé, en attente d\'approbation',
+            'billet_id': billet.pk,
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+def traiter_ticket_gratuit(request, demande_id):
+    """Approuve ou rejette une demande de ticket gratuit."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Non autorisé'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Méthode non autorisée'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Données invalides'}, status=400)
+
+    try:
+        demande = get_object_or_404(DemandeTicketGratuit, pk=demande_id)
+        user = request.user
+
+        # Droits : chef de gare → sa gare, manager/PDG/super_admin → toutes les gares
+        voyage = demande.billet.voyage
+        peut_traiter = (
+            user.is_superuser or
+            user.role in ['manager', 'pdg', 'super_admin'] or
+            (user.role == 'chef_gare' and voyage.gare == user.gare)
+        )
+        if not peut_traiter:
+            return JsonResponse({'success': False, 'error': 'Vous n\'avez pas les droits pour traiter cette demande'}, status=403)
+
+        if demande.statut != 'en_attente':
+            return JsonResponse({'success': False, 'error': 'Cette demande a déjà été traitée'})
+
+        action = data.get('action')
+        commentaire = data.get('commentaire', '').strip()
+
+        if action not in ['approuver', 'rejeter']:
+            return JsonResponse({'success': False, 'error': 'Action invalide'})
+
+        demande.traite_par = user
+        demande.commentaire = commentaire
+        demande.date_traitement = timezone.now()
+
+        if action == 'approuver':
+            demande.statut = 'approuve'
+            demande.billet.statut = 'gratuit'
+            demande.billet.date_paiement = timezone.now()
+            demande.billet.save(update_fields=['statut', 'date_paiement', 'date_modification'])
+            message = 'Ticket gratuit approuvé — le guichetier peut imprimer le duplicata'
+        else:
+            demande.statut = 'rejete'
+            demande.billet.statut = 'rembourse'
+            demande.billet.numero_siege = None
+            demande.billet.save(update_fields=['statut', 'numero_siege', 'date_modification'])
+            message = 'Demande rejetée — le siège a été libéré'
+
+        demande.save()
+        return JsonResponse({'success': True, 'message': message, 'nouveau_statut': demande.statut})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
 class ListeRemboursementsView(GestionRequiredMixin, TemplateView):
     """Vue pour la liste et la gestion des demandes de remboursement."""
     template_name = 'voyages/liste_remboursements.html'
@@ -1647,4 +1818,108 @@ class DashboardReportsView(GestionRequiredMixin, TemplateView):
         context['guichetier_id'] = guichetier_id
         context['gare_id'] = gare_id
 
+        return context
+
+
+class RapportTicketsGratuitView(GestionRequiredMixin, TemplateView):
+    """Rapport des demandes de tickets gratuits sur une période donnée."""
+    template_name = 'voyages/rapport_tickets_gratuit.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        date_debut = self.request.GET.get('date_debut')
+        date_fin = self.request.GET.get('date_fin')
+        guichetier_id = self.request.GET.get('guichetier')
+        gare_id = self.request.GET.get('gare')
+        statut_filtre = self.request.GET.get('statut', '')
+
+        demandes = DemandeTicketGratuit.objects.select_related(
+            'billet',
+            'billet__voyage',
+            'billet__voyage__gare',
+            'billet__voyage__ligne',
+            'billet__destination',
+            'demande_par',
+            'traite_par',
+        )
+
+        if not user.has_global_access and user.gare:
+            demandes = demandes.filter(billet__voyage__gare=user.gare)
+        elif user.has_global_access and gare_id:
+            demandes = demandes.filter(billet__voyage__gare_id=gare_id)
+
+        if date_debut:
+            demandes = demandes.filter(date_demande__date__gte=date_debut)
+        if date_fin:
+            demandes = demandes.filter(date_demande__date__lte=date_fin)
+
+        if guichetier_id:
+            demandes = demandes.filter(demande_par_id=guichetier_id)
+
+        if statut_filtre in ['en_attente', 'approuve', 'rejete']:
+            demandes = demandes.filter(statut=statut_filtre)
+
+        total = demandes.count()
+        nb_approuve = demandes.filter(statut='approuve').count()
+        nb_rejete = demandes.filter(statut='rejete').count()
+        nb_en_attente = demandes.filter(statut='en_attente').count()
+
+        from django.db.models import Sum
+        stats_guichetiers = demandes.values(
+            'demande_par__nom_complet',
+            'demande_par__gare__nom',
+        ).annotate(
+            nb_total=Count('id'),
+            nb_approuve=Count('id', filter=Q(statut='approuve')),
+            nb_rejete=Count('id', filter=Q(statut='rejete')),
+            nb_attente=Count('id', filter=Q(statut='en_attente')),
+        ).order_by('-nb_total')
+
+        stats_destinations = demandes.filter(
+            billet__destination__isnull=False
+        ).values(
+            'billet__destination__ville_arrivee'
+        ).annotate(
+            nb=Count('id'),
+            nb_approuve=Count('id', filter=Q(statut='approuve')),
+        ).order_by('-nb')
+
+        stats_motifs = demandes.exclude(motif='').values('motif').annotate(
+            count=Count('id')
+        ).order_by('-count')[:8]
+
+        from apps.personnel.models import Utilisateur
+        from apps.gares.models import Gare
+
+        if user.has_global_access:
+            guichetiers = Utilisateur.objects.filter(
+                role__in=['guichetier', 'gestionnaire', 'chef_gare']
+            ).order_by('nom_complet')
+            gares = Gare.objects.filter(active=True).order_by('nom')
+        else:
+            guichetiers = Utilisateur.objects.filter(
+                role__in=['guichetier', 'gestionnaire', 'chef_gare'],
+                gare=user.gare
+            ).order_by('nom_complet')
+            gares = None
+
+        context.update({
+            'demandes': demandes.order_by('-date_demande')[:200],
+            'total': total,
+            'nb_approuve': nb_approuve,
+            'nb_rejete': nb_rejete,
+            'nb_en_attente': nb_en_attente,
+            'stats_guichetiers': stats_guichetiers,
+            'stats_destinations': stats_destinations,
+            'stats_motifs': stats_motifs,
+            'guichetiers': guichetiers,
+            'gares': gares,
+            'date_debut': date_debut,
+            'date_fin': date_fin,
+            'guichetier_id': guichetier_id,
+            'gare_id': gare_id,
+            'statut_filtre': statut_filtre,
+        })
         return context

@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% load humanize %}
+
+{% block title %}Rapport Tickets Gratuits{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-header {
+    background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%);
+    border-radius: 14px;
+    padding: 26px 32px;
+    color: #fff;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.page-header::after {
+    pointer-events: none;
+    content: '\F718';
+    font-family: 'Bootstrap-Icons';
+    font-size: 9rem;
+    opacity: 0.06;
+    position: absolute;
+    right: 24px;
+    top: -10px;
+    line-height: 1;
+}
+.page-header h4 { font-weight: 700; margin: 0; font-size: 1.3rem; }
+.page-header p  { margin: 4px 0 0; opacity: 0.8; font-size: 13px; }
+
+.header-stat {
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 10px 20px;
+    text-align: center;
+    min-width: 90px;
+}
+.header-stat .hs-val { font-size: 1.6rem; font-weight: 800; line-height: 1; }
+.header-stat .hs-lbl { font-size: 11px; opacity: 0.85; margin-top: 3px; }
+
+.filter-zone {
+    background: #f8f9fc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+}
+.filter-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Pill filtre statut */
+.statut-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.statut-pill {
+    padding: 5px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .15s;
+}
+.statut-pill.all       { background:#f1f5f9; color:#475569; border-color:#e2e8f0; }
+.statut-pill.approuve  { background:#dcfce7; color:#15803d; border-color:#86efac; }
+.statut-pill.rejete    { background:#fee2e2; color:#dc2626; border-color:#fca5a5; }
+.statut-pill.attente   { background:#fef9c3; color:#854d0e; border-color:#fde047; }
+.statut-pill.active    { box-shadow: 0 2px 8px rgba(0,0,0,.15); transform: translateY(-1px); }
+
+.section-card {
+    border: none;
+    border-radius: 13px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    overflow: hidden;
+    height: 100%;
+}
+.sc-header {
+    padding: 13px 18px;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.sc-header.cyan  { background: #ecfeff; color: #0e7490; }
+.sc-header.amber { background: #fefce8; color: #854d0e; }
+.sc-header.teal  { background: #f0fdfa; color: #0f766e; }
+
+.rep-table th {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #6b7280;
+    background: #fafbfc;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.rep-table td {
+    padding: 11px 14px;
+    font-size: 13px;
+    vertical-align: middle;
+}
+.rep-table tbody tr:hover { background: #f8f9fc; }
+.rep-table tbody tr:last-child td { border-bottom: none; }
+
+.badge-approuve { background:#dcfce7; color:#15803d; border-radius:10px; padding:3px 10px; font-size:11px; font-weight:700; }
+.badge-rejete   { background:#fee2e2; color:#dc2626; border-radius:10px; padding:3px 10px; font-size:11px; font-weight:700; }
+.badge-attente  { background:#fef9c3; color:#854d0e; border-radius:10px; padding:3px 10px; font-size:11px; font-weight:700; }
+
+.nb-badge {
+    background: linear-gradient(135deg, #0e7490, #0891b2);
+    color: #fff;
+    border-radius: 10px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.dest-chip {
+    background: #ecfeff;
+    color: #0e7490;
+    border-radius: 8px;
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.gare-chip {
+    background: #eff6ff;
+    color: #1e40af;
+    border-radius: 8px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.motif-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.empty-state { text-align: center; padding: 50px 20px; color: #9ca3af; }
+.empty-state i { font-size: 2.8rem; display: block; margin-bottom: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <h4><i class="bi bi-ticket-perforated-fill me-2"></i>Rapport — Tickets Gratuits</h4>
+                <p>
+                    {% if date_debut and date_fin %}Du {{ date_debut }} au {{ date_fin }}
+                    {% elif date_debut %}À partir du {{ date_debut }}
+                    {% elif date_fin %}Jusqu'au {{ date_fin }}
+                    {% else %}Toutes périodes confondues{% endif %}
+                </p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <div class="header-stat">
+                    <div class="hs-val">{{ total }}</div>
+                    <div class="hs-lbl">Total</div>
+                </div>
+                <div class="header-stat" style="background:rgba(134,239,172,.25);">
+                    <div class="hs-val">{{ nb_approuve }}</div>
+                    <div class="hs-lbl">Approuvés</div>
+                </div>
+                <div class="header-stat" style="background:rgba(253,224,71,.25);">
+                    <div class="hs-val">{{ nb_en_attente }}</div>
+                    <div class="hs-lbl">En attente</div>
+                </div>
+                <div class="header-stat" style="background:rgba(252,165,165,.25);">
+                    <div class="hs-val">{{ nb_rejete }}</div>
+                    <div class="hs-lbl">Rejetés</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="filter-zone">
+        <div class="filter-title"><i class="bi bi-funnel"></i> Filtres</div>
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label fw-semibold" style="font-size:12px;">Date début</label>
+                <input type="date" name="date_debut" class="form-control form-control-sm"
+                       value="{{ date_debut|default:'' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold" style="font-size:12px;">Date fin</label>
+                <input type="date" name="date_fin" class="form-control form-control-sm"
+                       value="{{ date_fin|default:'' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold" style="font-size:12px;">Statut</label>
+                <select name="statut" class="form-select form-select-sm">
+                    <option value="" {% if not statut_filtre %}selected{% endif %}>Tous les statuts</option>
+                    <option value="approuve" {% if statut_filtre == 'approuve' %}selected{% endif %}>Approuvés</option>
+                    <option value="en_attente" {% if statut_filtre == 'en_attente' %}selected{% endif %}>En attente</option>
+                    <option value="rejete" {% if statut_filtre == 'rejete' %}selected{% endif %}>Rejetés</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold" style="font-size:12px;">Guichetier demandeur</label>
+                <select name="guichetier" class="form-select form-select-sm">
+                    <option value="">Tous les guichetiers</option>
+                    {% for g in guichetiers %}
+                    <option value="{{ g.pk }}" {% if guichetier_id == g.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ g.nom_complet }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if gares %}
+            <div class="col-md-2">
+                <label class="form-label fw-semibold" style="font-size:12px;">Gare</label>
+                <select name="gare" class="form-select form-select-sm">
+                    <option value="">Toutes les gares</option>
+                    {% for g in gares %}
+                    <option value="{{ g.pk }}" {% if gare_id == g.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ g.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="col-md-1 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary w-100">
+                    <i class="bi bi-search"></i>
+                </button>
+                <a href="{% url 'voyages:rapport_tickets_gratuit' %}" class="btn btn-sm btn-outline-secondary w-100">
+                    <i class="bi bi-x"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stats en 2 colonnes -->
+    <div class="row g-4 mb-4">
+
+        <!-- Stats par guichetier -->
+        <div class="col-lg-6">
+            <div class="section-card">
+                <div class="sc-header cyan">
+                    <i class="bi bi-person-badge"></i> Par guichetier
+                </div>
+                <div class="p-0">
+                    {% if stats_guichetiers %}
+                    <table class="table rep-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Guichetier</th>
+                                {% if gares %}<th>Gare</th>{% endif %}
+                                <th class="text-center">Total</th>
+                                <th class="text-center">Approuvés</th>
+                                <th class="text-center">Rejetés</th>
+                                <th class="text-center">En attente</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in stats_guichetiers %}
+                            <tr>
+                                <td class="fw-semibold">{{ s.demande_par__nom_complet|default:"—" }}</td>
+                                {% if gares %}
+                                <td>
+                                    {% if s.demande_par__gare__nom %}
+                                    <span class="gare-chip"><i class="bi bi-geo-alt-fill"></i>{{ s.demande_par__gare__nom }}</span>
+                                    {% else %}—{% endif %}
+                                </td>
+                                {% endif %}
+                                <td class="text-center"><span class="nb-badge">{{ s.nb_total }}</span></td>
+                                <td class="text-center">
+                                    {% if s.nb_approuve %}<span class="badge-approuve">{{ s.nb_approuve }}</span>
+                                    {% else %}<span style="color:#d1d5db;">0</span>{% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if s.nb_rejete %}<span class="badge-rejete">{{ s.nb_rejete }}</span>
+                                    {% else %}<span style="color:#d1d5db;">0</span>{% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if s.nb_attente %}<span class="badge-attente">{{ s.nb_attente }}</span>
+                                    {% else %}<span style="color:#d1d5db;">0</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-state"><i class="bi bi-person-x"></i><p>Aucune donnée</p></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats par destination + motifs -->
+        <div class="col-lg-6 d-flex flex-column gap-4">
+
+            <!-- Destinations -->
+            <div class="section-card" style="flex:1;">
+                <div class="sc-header teal">
+                    <i class="bi bi-geo-alt"></i> Par destination
+                </div>
+                <div class="p-0">
+                    {% if stats_destinations %}
+                    <table class="table rep-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Destination</th>
+                                <th class="text-center">Total</th>
+                                <th class="text-center">Approuvés</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in stats_destinations %}
+                            <tr>
+                                <td><span class="dest-chip">{{ d.billet__destination__ville_arrivee }}</span></td>
+                                <td class="text-center"><span class="nb-badge">{{ d.nb }}</span></td>
+                                <td class="text-center">
+                                    {% if d.nb_approuve %}<span class="badge-approuve">{{ d.nb_approuve }}</span>
+                                    {% else %}<span style="color:#d1d5db;">0</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-state" style="padding:24px;"><i class="bi bi-geo"></i><p class="mb-0">Aucune donnée</p></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Top motifs -->
+            {% if stats_motifs %}
+            <div class="section-card" style="flex:1;">
+                <div class="sc-header amber">
+                    <i class="bi bi-chat-left-text"></i> Motifs fréquents
+                </div>
+                <div class="p-3">
+                    {% for m in stats_motifs %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size:12px;color:#374151;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:12px;"
+                              title="{{ m.motif }}">
+                            {{ m.motif }}
+                        </span>
+                        <span class="nb-badge">{{ m.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- Liste détaillée -->
+    <div class="section-card">
+        <div class="sc-header" style="background:linear-gradient(135deg,#0e7490,#0891b2);color:#fff;">
+            <i class="bi bi-list-ul"></i>
+            Liste détaillée
+            <span class="ms-auto" style="font-size:12px;opacity:.8;">{{ total }} demande{{ total|pluralize }}</span>
+        </div>
+        {% if demandes %}
+        <div class="table-responsive">
+            <table class="table rep-table mb-0">
+                <thead>
+                    <tr>
+                        <th>N° Ticket</th>
+                        <th>Passager</th>
+                        <th>Siège</th>
+                        <th>Destination</th>
+                        <th>Voyage / Date</th>
+                        {% if gares %}<th>Gare</th>{% endif %}
+                        <th>Motif</th>
+                        <th>Demandé par</th>
+                        <th>Traité par</th>
+                        <th>Date demande</th>
+                        <th class="text-center">Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in demandes %}
+                    <tr>
+                        <td>
+                            <span style="font-weight:700;color:#0e7490;font-size:12px;">{{ d.billet.numero }}</span>
+                        </td>
+                        <td>
+                            <div class="fw-semibold" style="font-size:13px;">{{ d.billet.client_nom }}</div>
+                            <div style="font-size:11px;color:#9ca3af;">{{ d.billet.client_telephone }}</div>
+                        </td>
+                        <td>
+                            <span style="background:#f1f5f9;color:#475569;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;">
+                                N° {{ d.billet.numero_siege|default:"—" }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if d.billet.destination %}
+                            <span class="dest-chip">{{ d.billet.destination.ville_arrivee }}</span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td style="font-size:12px;">
+                            <div class="fw-semibold" style="color:#374151;">{{ d.billet.voyage.ligne }}</div>
+                            <div style="color:#9ca3af;">{{ d.billet.voyage.date_depart|date:"d/m/Y" }}</div>
+                        </td>
+                        {% if gares %}
+                        <td>
+                            <span class="gare-chip">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                {{ d.billet.voyage.gare.nom }}
+                            </span>
+                        </td>
+                        {% endif %}
+                        <td class="motif-cell" title="{{ d.motif }}">
+                            {% if d.motif %}{{ d.motif }}{% else %}<em>—</em>{% endif %}
+                        </td>
+                        <td style="font-size:12px;">{{ d.demande_par.nom_complet|default:"—" }}</td>
+                        <td style="font-size:12px;color:#6b7280;">{{ d.traite_par.nom_complet|default:"—" }}</td>
+                        <td style="font-size:12px;color:#6b7280;white-space:nowrap;">
+                            {{ d.date_demande|date:"d/m/Y H:i" }}
+                        </td>
+                        <td class="text-center">
+                            {% if d.statut == 'approuve' %}
+                                <span class="badge-approuve"><i class="bi bi-check-circle me-1"></i>Approuvé</span>
+                            {% elif d.statut == 'rejete' %}
+                                <span class="badge-rejete"><i class="bi bi-x-circle me-1"></i>Rejeté</span>
+                            {% else %}
+                                <span class="badge-attente"><i class="bi bi-hourglass-split me-1"></i>En attente</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if total > 200 %}
+        <div class="text-center py-3" style="font-size:12px;color:#9ca3af;border-top:1px solid #f0f0f0;">
+            <i class="bi bi-info-circle me-1"></i>Affichage limité aux 200 dernières demandes. Affinez les filtres pour voir plus.
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-ticket-perforated"></i>
+            <p class="fw-semibold mb-1">Aucune demande de ticket gratuit trouvée</p>
+            <p style="font-size:13px;">Modifiez les filtres ou sélectionnez une autre période.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

@@ -10,6 +10,8 @@ class Billet(models.Model):
     STATUT_CHOICES = [
         ('reserve', 'Réservé'),
         ('paye', 'Payé'),
+        ('gratuit_en_attente', 'Gratuit (en attente)'),
+        ('gratuit', 'Gratuit'),
         ('reporte', 'Reporté'),
         ('rembourse', 'Remboursé'),
     ]
@@ -58,7 +60,7 @@ class Billet(models.Model):
         verbose_name="Montant (FCFA)"
     )
     statut = models.CharField(
-        max_length=10,
+        max_length=25,
         choices=STATUT_CHOICES,
         default='reserve',
         verbose_name="Statut"
@@ -392,3 +394,51 @@ class DemandeRemboursement(models.Model):
 
     def __str__(self):
         return f"Remboursement {self.billet.numero} - {self.get_statut_display()}"
+
+
+class DemandeTicketGratuit(models.Model):
+    STATUT_CHOICES = [
+        ('en_attente', 'En attente'),
+        ('approuve', 'Approuvé'),
+        ('rejete', 'Rejeté'),
+    ]
+
+    billet = models.OneToOneField(
+        Billet,
+        on_delete=models.CASCADE,
+        related_name='demande_gratuit',
+        verbose_name="Billet"
+    )
+    motif = models.TextField(blank=True, verbose_name="Motif")
+    statut = models.CharField(
+        max_length=15,
+        choices=STATUT_CHOICES,
+        default='en_attente',
+        verbose_name="Statut"
+    )
+    demande_par = models.ForeignKey(
+        'personnel.Utilisateur',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='demandes_gratuit_creees',
+        verbose_name="Demandée par"
+    )
+    traite_par = models.ForeignKey(
+        'personnel.Utilisateur',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='demandes_gratuit_traitees',
+        verbose_name="Traitée par"
+    )
+    date_demande = models.DateTimeField(auto_now_add=True, verbose_name="Date de la demande")
+    date_traitement = models.DateTimeField(null=True, blank=True, verbose_name="Date de traitement")
+    commentaire = models.TextField(blank=True, verbose_name="Commentaire (refus)")
+
+    class Meta:
+        verbose_name = "Demande de ticket gratuit"
+        verbose_name_plural = "Demandes de tickets gratuits"
+        ordering = ['-date_demande']
+
+    def __str__(self):
+        return f"Gratuit {self.billet.numero} — {self.get_statut_display()}"
