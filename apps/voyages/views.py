@@ -1905,8 +1905,16 @@ class RapportTicketsGratuitView(GestionRequiredMixin, TemplateView):
             ).order_by('nom_complet')
             gares = None
 
+        from django.core.paginator import Paginator
+        paginator = Paginator(demandes.order_by('-date_demande'), 10)
+        page_obj = paginator.get_page(self.request.GET.get('page', 1))
+
+        get_params = self.request.GET.copy()
+        get_params.pop('page', None)
+
         context.update({
-            'demandes': demandes.order_by('-date_demande')[:200],
+            'page_obj': page_obj,
+            'query_string': get_params.urlencode(),
             'total': total,
             'nb_approuve': nb_approuve,
             'nb_rejete': nb_rejete,

@@ -7,12 +7,13 @@
 
 {% block extra_css %}
 <style>
+/* ── Header ────────────────────────────────────────────── */
 .page-header {
     background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%);
     border-radius: 14px;
     padding: 26px 32px;
     color: #fff;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
     position: relative;
     overflow: hidden;
 }
@@ -40,12 +41,13 @@
 .header-stat .hs-val { font-size: 1.6rem; font-weight: 800; line-height: 1; }
 .header-stat .hs-lbl { font-size: 11px; opacity: 0.85; margin-top: 3px; }
 
+/* ── Filtres ────────────────────────────────────────────── */
 .filter-zone {
     background: #f8f9fc;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    padding: 18px 22px;
-    margin-bottom: 24px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
 }
 .filter-title {
     font-size: 12px;
@@ -53,82 +55,78 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: #6b7280;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
-/* Pill filtre statut */
-.statut-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-.statut-pill {
-    padding: 5px 16px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 700;
-    border: 1.5px solid transparent;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all .15s;
-}
-.statut-pill.all       { background:#f1f5f9; color:#475569; border-color:#e2e8f0; }
-.statut-pill.approuve  { background:#dcfce7; color:#15803d; border-color:#86efac; }
-.statut-pill.rejete    { background:#fee2e2; color:#dc2626; border-color:#fca5a5; }
-.statut-pill.attente   { background:#fef9c3; color:#854d0e; border-color:#fde047; }
-.statut-pill.active    { box-shadow: 0 2px 8px rgba(0,0,0,.15); transform: translateY(-1px); }
-
+/* ── Cards stats ────────────────────────────────────────── */
 .section-card {
     border: none;
     border-radius: 13px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.07);
     overflow: hidden;
     height: 100%;
+    background: #fff;
 }
 .sc-header {
-    padding: 13px 18px;
+    padding: 11px 16px;
     font-weight: 700;
-    font-size: 13px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 .sc-header.cyan  { background: #ecfeff; color: #0e7490; }
 .sc-header.amber { background: #fefce8; color: #854d0e; }
 .sc-header.teal  { background: #f0fdfa; color: #0f766e; }
 
-.rep-table th {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    color: #6b7280;
-    background: #fafbfc;
-    padding: 10px 14px;
-    border-bottom: 1px solid #f0f0f0;
+/* ── Stat items (remplace les tableaux) ─────────────────── */
+.stat-list { padding: 8px 0; }
+.stat-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    gap: 10px;
 }
-.rep-table td {
-    padding: 11px 14px;
+.stat-item:last-child { border-bottom: none; }
+.stat-item:hover { background: #fafbfc; }
+.stat-name {
     font-size: 13px;
-    vertical-align: middle;
+    font-weight: 600;
+    color: #374151;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-.rep-table tbody tr:hover { background: #f8f9fc; }
-.rep-table tbody tr:last-child td { border-bottom: none; }
+.stat-badges { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
 
-.badge-approuve { background:#dcfce7; color:#15803d; border-radius:10px; padding:3px 10px; font-size:11px; font-weight:700; }
-.badge-rejete   { background:#fee2e2; color:#dc2626; border-radius:10px; padding:3px 10px; font-size:11px; font-weight:700; }
-.badge-attente  { background:#fef9c3; color:#854d0e; border-radius:10px; padding:3px 10px; font-size:11px; font-weight:700; }
+/* ── Badges couleurs ────────────────────────────────────── */
+.badge-approuve { background:#dcfce7; color:#15803d; border-radius:10px; padding:3px 9px; font-size:11px; font-weight:700; white-space:nowrap; }
+.badge-rejete   { background:#fee2e2; color:#dc2626; border-radius:10px; padding:3px 9px; font-size:11px; font-weight:700; white-space:nowrap; }
+.badge-attente  { background:#fef9c3; color:#854d0e; border-radius:10px; padding:3px 9px; font-size:11px; font-weight:700; white-space:nowrap; }
+.badge-zero     { color: #d1d5db; font-size: 11px; font-weight: 600; padding: 3px 4px; }
 
 .nb-badge {
     background: linear-gradient(135deg, #0e7490, #0891b2);
     color: #fff;
     border-radius: 10px;
-    padding: 2px 10px;
+    padding: 2px 9px;
     font-size: 11px;
     font-weight: 700;
     display: inline-block;
+    white-space: nowrap;
 }
 
+/* ── Chips ──────────────────────────────────────────────── */
 .dest-chip {
     background: #ecfeff;
     color: #0e7490;
@@ -137,7 +135,6 @@
     font-size: 11px;
     font-weight: 600;
 }
-
 .gare-chip {
     background: #eff6ff;
     color: #1e40af;
@@ -149,9 +146,34 @@
     align-items: center;
     gap: 4px;
 }
+.gare-sub {
+    font-size: 10px;
+    color: #6b7280;
+    margin-top: 1px;
+}
+
+/* ── Table détaillée ─────────────────────────────────────── */
+.rep-table th {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #6b7280;
+    background: #fafbfc;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    white-space: nowrap;
+}
+.rep-table td {
+    padding: 11px 14px;
+    font-size: 13px;
+    vertical-align: middle;
+}
+.rep-table tbody tr:hover { background: #f8f9fc; }
+.rep-table tbody tr:last-child td { border-bottom: none; }
 
 .motif-cell {
-    max-width: 200px;
+    max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -160,15 +182,80 @@
     font-style: italic;
 }
 
-.empty-state { text-align: center; padding: 50px 20px; color: #9ca3af; }
-.empty-state i { font-size: 2.8rem; display: block; margin-bottom: 12px; }
+/* ── Pagination ─────────────────────────────────────────── */
+.pag-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-top: 1px solid #f0f0f0;
+    background: #fafbfc;
+    border-radius: 0 0 13px 13px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.pag-info {
+    font-size: 12px;
+    color: #6b7280;
+}
+.pag-nav { display: flex; align-items: center; gap: 4px; }
+.pag-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    background: #fff;
+    transition: all .15s;
+}
+.pag-btn:hover { background: #f1f5f9; color: #0e7490; border-color: #0e7490; }
+.pag-btn.active {
+    background: linear-gradient(135deg, #0e7490, #0891b2);
+    color: #fff;
+    border-color: transparent;
+}
+.pag-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+/* ── Motifs ─────────────────────────────────────────────── */
+.motif-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    gap: 10px;
+}
+.motif-item:last-child { border-bottom: none; }
+.motif-item:hover { background: #fafbfc; }
+.motif-text {
+    font-size: 12px;
+    color: #374151;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-style: italic;
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.empty-state { text-align: center; padding: 40px 20px; color: #9ca3af; }
+.empty-state i { font-size: 2.4rem; display: block; margin-bottom: 10px; }
+.empty-state-sm { text-align: center; padding: 20px; color: #9ca3af; font-size: 12px; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
 
-    <!-- Header -->
+    <!-- ── Header ──────────────────────────────────────── -->
     <div class="page-header">
         <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
             <div>
@@ -201,7 +288,7 @@
         </div>
     </div>
 
-    <!-- Filtres -->
+    <!-- ── Filtres ─────────────────────────────────────── -->
     <div class="filter-zone">
         <div class="filter-title"><i class="bi bi-funnel"></i> Filtres</div>
         <form method="get" class="row g-3 align-items-end">
@@ -259,131 +346,101 @@
         </form>
     </div>
 
-    <!-- Stats en 2 colonnes -->
-    <div class="row g-4 mb-4">
+    <!-- ── Stats : 3 colonnes ──────────────────────────── -->
+    <div class="row g-3 mb-4">
 
-        <!-- Stats par guichetier -->
-        <div class="col-lg-6">
+        <!-- Par guichetier -->
+        <div class="col-lg-5">
             <div class="section-card">
                 <div class="sc-header cyan">
                     <i class="bi bi-person-badge"></i> Par guichetier
                 </div>
-                <div class="p-0">
-                    {% if stats_guichetiers %}
-                    <table class="table rep-table mb-0">
-                        <thead>
-                            <tr>
-                                <th>Guichetier</th>
-                                {% if gares %}<th>Gare</th>{% endif %}
-                                <th class="text-center">Total</th>
-                                <th class="text-center">Approuvés</th>
-                                <th class="text-center">Rejetés</th>
-                                <th class="text-center">En attente</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for s in stats_guichetiers %}
-                            <tr>
-                                <td class="fw-semibold">{{ s.demande_par__nom_complet|default:"—" }}</td>
-                                {% if gares %}
-                                <td>
-                                    {% if s.demande_par__gare__nom %}
-                                    <span class="gare-chip"><i class="bi bi-geo-alt-fill"></i>{{ s.demande_par__gare__nom }}</span>
-                                    {% else %}—{% endif %}
-                                </td>
-                                {% endif %}
-                                <td class="text-center"><span class="nb-badge">{{ s.nb_total }}</span></td>
-                                <td class="text-center">
-                                    {% if s.nb_approuve %}<span class="badge-approuve">{{ s.nb_approuve }}</span>
-                                    {% else %}<span style="color:#d1d5db;">0</span>{% endif %}
-                                </td>
-                                <td class="text-center">
-                                    {% if s.nb_rejete %}<span class="badge-rejete">{{ s.nb_rejete }}</span>
-                                    {% else %}<span style="color:#d1d5db;">0</span>{% endif %}
-                                </td>
-                                <td class="text-center">
-                                    {% if s.nb_attente %}<span class="badge-attente">{{ s.nb_attente }}</span>
-                                    {% else %}<span style="color:#d1d5db;">0</span>{% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% else %}
-                    <div class="empty-state"><i class="bi bi-person-x"></i><p>Aucune donnée</p></div>
-                    {% endif %}
+                {% if stats_guichetiers %}
+                <div class="stat-list">
+                    {% for s in stats_guichetiers %}
+                    <div class="stat-item">
+                        <div style="flex:1;min-width:0;">
+                            <div class="stat-name">{{ s.demande_par__nom_complet|default:"—" }}</div>
+                            {% if gares and s.demande_par__gare__nom %}
+                            <div class="gare-sub"><i class="bi bi-geo-alt-fill" style="font-size:9px;"></i> {{ s.demande_par__gare__nom }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="stat-badges">
+                            <span class="nb-badge">{{ s.nb_total }}</span>
+                            {% if s.nb_approuve %}<span class="badge-approuve">{{ s.nb_approuve }} ✓</span>{% endif %}
+                            {% if s.nb_attente %}<span class="badge-attente">{{ s.nb_attente }} ⏳</span>{% endif %}
+                            {% if s.nb_rejete %}<span class="badge-rejete">{{ s.nb_rejete }} ✗</span>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
+                {% else %}
+                <div class="empty-state-sm"><i class="bi bi-person-x d-block mb-1" style="font-size:1.4rem;"></i>Aucune donnée</div>
+                {% endif %}
             </div>
         </div>
 
-        <!-- Stats par destination + motifs -->
-        <div class="col-lg-6 d-flex flex-column gap-4">
-
-            <!-- Destinations -->
-            <div class="section-card" style="flex:1;">
+        <!-- Par destination -->
+        <div class="col-lg-4">
+            <div class="section-card">
                 <div class="sc-header teal">
                     <i class="bi bi-geo-alt"></i> Par destination
                 </div>
-                <div class="p-0">
-                    {% if stats_destinations %}
-                    <table class="table rep-table mb-0">
-                        <thead>
-                            <tr>
-                                <th>Destination</th>
-                                <th class="text-center">Total</th>
-                                <th class="text-center">Approuvés</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for d in stats_destinations %}
-                            <tr>
-                                <td><span class="dest-chip">{{ d.billet__destination__ville_arrivee }}</span></td>
-                                <td class="text-center"><span class="nb-badge">{{ d.nb }}</span></td>
-                                <td class="text-center">
-                                    {% if d.nb_approuve %}<span class="badge-approuve">{{ d.nb_approuve }}</span>
-                                    {% else %}<span style="color:#d1d5db;">0</span>{% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% else %}
-                    <div class="empty-state" style="padding:24px;"><i class="bi bi-geo"></i><p class="mb-0">Aucune donnée</p></div>
-                    {% endif %}
+                {% if stats_destinations %}
+                <div class="stat-list">
+                    {% for d in stats_destinations %}
+                    <div class="stat-item">
+                        <span class="dest-chip">{{ d.billet__destination__ville_arrivee }}</span>
+                        <div class="stat-badges">
+                            <span class="nb-badge">{{ d.nb }}</span>
+                            {% if d.nb_approuve %}<span class="badge-approuve">{{ d.nb_approuve }} ✓</span>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
+                {% else %}
+                <div class="empty-state-sm"><i class="bi bi-geo d-block mb-1" style="font-size:1.4rem;"></i>Aucune donnée</div>
+                {% endif %}
             </div>
+        </div>
 
-            <!-- Top motifs -->
-            {% if stats_motifs %}
-            <div class="section-card" style="flex:1;">
+        <!-- Motifs fréquents -->
+        <div class="col-lg-3">
+            <div class="section-card">
                 <div class="sc-header amber">
                     <i class="bi bi-chat-left-text"></i> Motifs fréquents
                 </div>
-                <div class="p-3">
+                {% if stats_motifs %}
+                <div class="stat-list">
                     {% for m in stats_motifs %}
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span style="font-size:12px;color:#374151;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:12px;"
-                              title="{{ m.motif }}">
-                            {{ m.motif }}
-                        </span>
+                    <div class="motif-item">
+                        <span class="motif-text" title="{{ m.motif }}">{{ m.motif }}</span>
                         <span class="nb-badge">{{ m.count }}</span>
                     </div>
                     {% endfor %}
                 </div>
+                {% else %}
+                <div class="empty-state-sm"><i class="bi bi-chat d-block mb-1" style="font-size:1.4rem;"></i>Aucun motif</div>
+                {% endif %}
             </div>
-            {% endif %}
-
         </div>
+
     </div>
 
-    <!-- Liste détaillée -->
+    <!-- ── Liste détaillée ─────────────────────────────── -->
     <div class="section-card">
-        <div class="sc-header" style="background:linear-gradient(135deg,#0e7490,#0891b2);color:#fff;">
+        <div class="sc-header" style="background:linear-gradient(135deg,#0e7490,#0891b2);color:#fff;border-radius:13px 13px 0 0;">
             <i class="bi bi-list-ul"></i>
             Liste détaillée
-            <span class="ms-auto" style="font-size:12px;opacity:.8;">{{ total }} demande{{ total|pluralize }}</span>
+            <span class="ms-auto" style="font-size:12px;opacity:.8;">
+                {{ total }} demande{{ total|pluralize }}
+                {% if page_obj.paginator.num_pages > 1 %}
+                — page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                {% endif %}
+            </span>
         </div>
-        {% if demandes %}
+
+        {% if page_obj.object_list %}
         <div class="table-responsive">
             <table class="table rep-table mb-0">
                 <thead>
@@ -402,7 +459,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for d in demandes %}
+                    {% for d in page_obj %}
                     <tr>
                         <td>
                             <span style="font-weight:700;color:#0e7490;font-size:12px;">{{ d.billet.numero }}</span>
@@ -455,11 +512,49 @@
                 </tbody>
             </table>
         </div>
-        {% if total > 200 %}
-        <div class="text-center py-3" style="font-size:12px;color:#9ca3af;border-top:1px solid #f0f0f0;">
-            <i class="bi bi-info-circle me-1"></i>Affichage limité aux 200 dernières demandes. Affinez les filtres pour voir plus.
+
+        <!-- Pagination -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pag-bar">
+            <div class="pag-info">
+                Affichage {{ page_obj.start_index }}–{{ page_obj.end_index }} sur {{ total }} demande{{ total|pluralize }}
+            </div>
+            <div class="pag-nav">
+                {% if page_obj.has_previous %}
+                <a class="pag-btn" href="?{{ query_string }}&page=1" title="Première page">
+                    <i class="bi bi-chevron-double-left"></i>
+                </a>
+                <a class="pag-btn" href="?{{ query_string }}&page={{ page_obj.previous_page_number }}">
+                    <i class="bi bi-chevron-left"></i> Préc.
+                </a>
+                {% else %}
+                <span class="pag-btn disabled"><i class="bi bi-chevron-double-left"></i></span>
+                <span class="pag-btn disabled"><i class="bi bi-chevron-left"></i> Préc.</span>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num == page_obj.number %}
+                    <span class="pag-btn active">{{ num }}</span>
+                    {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                    <a class="pag-btn" href="?{{ query_string }}&page={{ num }}">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <a class="pag-btn" href="?{{ query_string }}&page={{ page_obj.next_page_number }}">
+                    Suiv. <i class="bi bi-chevron-right"></i>
+                </a>
+                <a class="pag-btn" href="?{{ query_string }}&page={{ page_obj.paginator.num_pages }}" title="Dernière page">
+                    <i class="bi bi-chevron-double-right"></i>
+                </a>
+                {% else %}
+                <span class="pag-btn disabled">Suiv. <i class="bi bi-chevron-right"></i></span>
+                <span class="pag-btn disabled"><i class="bi bi-chevron-double-right"></i></span>
+                {% endif %}
+            </div>
         </div>
         {% endif %}
+
         {% else %}
         <div class="empty-state">
             <i class="bi bi-ticket-perforated"></i>

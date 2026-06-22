@@ -22,6 +22,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         today = timezone.now().date()
 
+        # Transition automatique : voyages dont la date est passée encore en "programme" → "en_cours"
+        Voyage.objects.filter(statut='programme', date_depart__lte=today).update(statut='en_cours')
+
         # Filtrer les voyages selon les droits de l'utilisateur
         if user.has_global_access:
             voyages_today = Voyage.objects.filter(date_depart=today)
@@ -76,6 +79,9 @@ class VoyageListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         user = self.request.user
         today = timezone.now().date()
+
+        # Transition automatique : voyages du jour encore "programme" → "en_cours"
+        Voyage.objects.filter(statut='programme', date_depart__lte=today).update(statut='en_cours')
 
         # Filtre de statut
         statut_filter = self.request.GET.get('statut', 'actifs')
