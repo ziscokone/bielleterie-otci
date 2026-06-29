@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.db.models import Q, Sum
 from django.contrib import messages
+from django_ratelimit.decorators import ratelimit
 
 from apps.billets.models import Billet
 from apps.clients.models import Client
@@ -176,6 +177,7 @@ class VenteView(LoginRequiredMixin, DetailView):
         return context
 
 
+@ratelimit(key='user', rate='60/m', method='POST', block=True)
 @login_required
 def creer_billet(request, voyage_id):
     """Crée un ou plusieurs billets."""
@@ -287,22 +289,26 @@ def creer_billet(request, voyage_id):
             'billets': billets_data
         })
 
-    except Exception as e:
+    except Exception:
         return JsonResponse({
             'success': False,
-            'error': str(e)
-        })
+            'error': 'Une erreur est survenue. Veuillez réessayer.'
+        }, status=500)
 
 
+@ratelimit(key='user', rate='60/m', method='POST', block=True)
 @login_required
 def payer_reservation(request, billet_id):
     """Convertit une réservation en paiement."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Méthode non autorisée'}, status=405)
+
     billet = get_object_or_404(Billet, pk=billet_id)
     user = request.user
 
     # Vérifier les droits d'accès
     if not user.has_global_access and billet.voyage.gare != user.gare:
-        return JsonResponse({'success': False, 'error': 'Accès non autorisé'})
+        return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
 
     if billet.statut == 'paye':
         return JsonResponse({
@@ -385,6 +391,9 @@ def vendre_a_autre_client(request, billet_id):
 def get_sieges_status(request, voyage_id):
     """Retourne le statut actuel des sièges (pour mise à jour AJAX)."""
     voyage = get_object_or_404(Voyage, pk=voyage_id)
+
+    if not request.user.has_global_access and voyage.gare != request.user.gare:
+        return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
 
     disposition = voyage.get_disposition_sieges_avec_statut()
 

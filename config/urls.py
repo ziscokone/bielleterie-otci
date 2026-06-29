@@ -1,11 +1,14 @@
+import os
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from core.views import hub
 
+ADMIN_URL = os.environ.get('ADMIN_URL', 'otci-admin-panel/')
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path(ADMIN_URL, admin.site.urls),
     path('hub/', hub, name='hub'),
     path('', include('apps.guichet.urls')),
     path('clients/', include('apps.clients.urls')),

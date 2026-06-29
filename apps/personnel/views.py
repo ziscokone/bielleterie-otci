@@ -54,6 +54,11 @@ class UtilisateurCreateView(AdminRequiredMixin, CreateView):
     template_name = 'personnel/utilisateur_form.html'
     success_url = reverse_lazy('personnel:utilisateur_list')
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['current_user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         messages.success(self.request, 'Utilisateur créé avec succès.')
         return super().form_valid(form)
@@ -65,6 +70,11 @@ class UtilisateurUpdateView(AdminRequiredMixin, UpdateView):
     form_class = UtilisateurForm
     template_name = 'personnel/utilisateur_form.html'
     success_url = reverse_lazy('personnel:utilisateur_list')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['current_user'] = self.request.user
+        return kwargs
 
     def form_valid(self, form):
         messages.success(self.request, 'Utilisateur modifié avec succès.')
@@ -284,8 +294,8 @@ def upload_document_chauffeur(request, chauffeur_id):
 
         return JsonResponse({'success': True})
 
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Une erreur est survenue.'}, status=500)
 
 
 def telecharger_document_chauffeur(request, doc_id):

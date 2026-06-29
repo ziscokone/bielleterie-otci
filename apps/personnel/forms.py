@@ -34,15 +34,18 @@ class UtilisateurForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.current_user = kwargs.pop('current_user', None)
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
-            # Mode édition
             self.fields['password1'].help_text = 'Laisser vide pour conserver le mot de passe actuel'
         else:
-            # Mode création
             self.fields['password1'].required = True
             self.fields['password2'].required = True
             self.fields['password1'].help_text = 'Minimum 8 caractères'
+
+        # Seul le vrai superuser Django peut activer/désactiver un compte
+        if not (self.current_user and self.current_user.is_superuser):
+            self.fields.pop('actif', None)
 
     def clean_password2(self):
         password1 = self.cleaned_data.get('password1')

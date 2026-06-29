@@ -8,7 +8,6 @@ from django.shortcuts import get_object_or_404, render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 import json
 from decimal import Decimal, InvalidOperation
 from datetime import timedelta

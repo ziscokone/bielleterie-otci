@@ -4,19 +4,25 @@ Django settings for Gestion Billetterie project.
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Charge le fichier .env s'il existe (développement local)
+load_dotenv(BASE_DIR / '.env')
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-hd4+#uu!m996vv)m0^4@ki=k#=)$0**rw-dvspn0si&fuoz4_=')
+_secret_key = os.environ.get('SECRET_KEY')
+if not _secret_key:
+    raise RuntimeError("La variable d'environnement SECRET_KEY est obligatoire.")
+SECRET_KEY = _secret_key
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'zisco.pythonanywhere.com']
+_allowed_hosts = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(',') if h.strip()]
 
 
 
@@ -35,6 +41,7 @@ INSTALLED_APPS = [
     # Sécurité
     'axes',
     'auditlog',
+    'django_ratelimit',
 
     # Local apps
     'core',
@@ -85,6 +92,28 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+
+
+# Cache — Redis en prod, mémoire en développement
+_cache_url = os.environ.get('CACHE_URL', '')
+if _cache_url.startswith('redis://'):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': _cache_url,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
+
+# En développement, le LocMemCache ne supporte pas l'incrément atomique
+# (ratelimit fonctionne quand même sur un seul process — Redis règle ça en prod)
+if DEBUG:
+    SILENCED_SYSTEM_CHECKS = ['django_ratelimit.E003', 'django_ratelimit.W001']
 
 
 # Database
