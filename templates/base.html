@@ -122,8 +122,8 @@
 
                 {% if user.is_superuser or user.role == 'super_admin' %}
                 <li class="nav-item">
-                    <a class="nav-link {% if '/admin/' in request.path %}active{% endif %}"
-                       href="/admin/">
+                    <a class="nav-link {% if 'otci-admin-panel' in request.path %}active{% endif %}"
+                       href="/otci-admin-panel/">
                         <i class="bi bi-gear-fill me-1"></i> Admin
                     </a>
                 </li>
