@@ -170,7 +170,7 @@
             <h4><i class="bi bi-geo-alt me-2"></i>Destinations</h4>
             <div class="d-flex gap-3 mt-3 flex-wrap">
                 <div class="header-stat">
-                    <div class="hs-val">{{ destinations|length }}</div>
+                    <div class="hs-val">{{ paginator.count|default:destinations|length }}</div>
                     <div class="hs-lbl">Total</div>
                 </div>
                 <div class="header-stat">
@@ -211,7 +211,7 @@
         <div class="table-header">
             <span><i class="bi bi-geo-alt me-2" style="color:var(--color-accent)"></i>Liste des destinations</span>
             <span class="badge rounded-pill" style="background:#eef2ff;color:#4338ca;font-size:12px;font-weight:600">
-                {{ destinations|length }} destination{{ destinations|length|pluralize }}
+                {{ paginator.count|default:destinations|length }} destination{{ paginator.count|default:destinations|length|pluralize }}
             </span>
         </div>
 
@@ -250,10 +250,12 @@
                                    class="btn-action edit" title="Modifier">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="{% url 'destinations:destination_delete' destination.pk %}"
-                                   class="btn-action del" title="Supprimer">
+                                {% if request.user.is_super_admin and destination.active %}
+                                <button type="button" class="btn-action del" title="Désactiver"
+                                        data-bs-toggle="modal" data-bs-target="#deactivateModal{{ destination.pk }}">
                                     <i class="bi bi-trash"></i>
-                                </a>
+                                </button>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -261,6 +263,64 @@
                 </tbody>
             </table>
         </div>
+
+        {% if request.user.is_super_admin %}
+        {% for destination in destinations %}
+        <div class="modal fade" id="deactivateModal{{ destination.pk }}" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h6 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Désactiver la destination</h6>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-2">Voulez-vous désactiver :</p>
+                        <p class="fw-bold mb-2">{{ destination.ligne.nom }} → {{ destination.ville_arrivee }}</p>
+                        <p class="text-muted small mb-0">
+                            La destination ne sera plus proposée à la vente, mais elle et son historique de voyages
+                            resteront conservés en base. Vous pourrez la réactiver plus tard.
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+                        <form method="post" action="{% url 'destinations:destination_delete' destination.pk %}" class="mb-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="bi bi-slash-circle me-1"></i>Désactiver
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if is_paginated %}
+        <nav class="d-flex justify-content-center py-3 border-top">
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Première</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Précédent</a>
+                    </li>
+                {% endif %}
+                <li class="page-item active">
+                    <span class="page-link">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Suivant</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Dernière</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
 
         {% else %}
         <div class="empty-state">

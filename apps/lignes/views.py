@@ -3,7 +3,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.http import HttpResponseRedirect
 
+from core.mixins import SuperAdminRequiredMixin
 from .models import Ligne
 from .forms import LigneForm
 from apps.compagnie.models import Compagnie
@@ -73,12 +75,19 @@ class LigneUpdateView(AdminRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class LigneDeleteView(AdminRequiredMixin, DeleteView):
-    """Supprimer une ligne."""
+class LigneDeleteView(SuperAdminRequiredMixin, DeleteView):
+    """
+    Désactive une ligne (soft-delete).
+    On ne supprime jamais physiquement une ligne : elle peut être référencée
+    par des destinations, voyages et billets passés. On la marque inactive.
+    """
     model = Ligne
     template_name = 'lignes/ligne_confirm_delete.html'
-    success_url = reverse_lazy('lignes:list')
+    success_url = reverse_lazy('lignes:ligne_list')
 
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, 'Ligne supprimée avec succès.')
-        return super().delete(request, *args, **kwargs)
+    def form_valid(self, form):
+        success_url = self.get_success_url()
+        self.object.active = False
+        self.object.save(update_fields=['active'])
+        messages.success(self.request, 'Ligne désactivée avec succès.')
+        return HttpResponseRedirect(success_url)

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Supprimer la Gare - Gestion Billetterie{% endblock %}
+{% block title %}Désactiver la Gare - Gestion Billetterie{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -9,7 +9,7 @@
             <div class="card">
                 <div class="card-header bg-danger text-white">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    Confirmer la suppression
+                    Confirmer la désactivation
                 </div>
                 <div class="card-body text-center py-4">
                     <i class="bi bi-building display-4 text-danger"></i>
@@ -18,7 +18,8 @@
 
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        Cette action est irréversible. Tous les voyages et billets associés seront également supprimés.
+                        La gare ne sera plus proposée pour les nouveaux voyages/lignes, mais elle et son historique
+                        (voyages, billets) resteront conservés en base. Vous pourrez la réactiver plus tard.
                     </div>
 
                     <form method="post">
@@ -28,7 +29,7 @@
                                 <i class="bi bi-x-lg me-2"></i>Annuler
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash me-2"></i>Supprimer
+                                <i class="bi bi-slash-circle me-2"></i>Désactiver
                             </button>
                         </div>
                     </form>

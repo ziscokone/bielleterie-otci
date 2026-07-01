@@ -2,7 +2,8 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.db.models import Q
-from core.mixins import GestionRequiredMixin
+from django.http import HttpResponseRedirect
+from core.mixins import GestionRequiredMixin, SuperAdminRequiredMixin
 from .models import Destination
 from .forms import DestinationForm
 
@@ -12,6 +13,7 @@ class DestinationListView(GestionRequiredMixin, ListView):
     model = Destination
     template_name = 'destinations/destination_list.html'
     context_object_name = 'destinations'
+    paginate_by = 15
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -81,8 +83,13 @@ class DestinationUpdateView(GestionRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class DestinationDeleteView(GestionRequiredMixin, DeleteView):
-    """Supprimer une destination."""
+class DestinationDeleteView(SuperAdminRequiredMixin, DeleteView):
+    """
+    Désactive une destination (soft-delete).
+    La suppression physique est volontairement désactivée : une destination
+    peut déjà être référencée par des voyages passés, la supprimer casserait
+    cet historique. On la marque simplement inactive.
+    """
     model = Destination
     template_name = 'destinations/destination_confirm_delete.html'
     success_url = reverse_lazy('destinations:destination_list')
@@ -98,5 +105,8 @@ class DestinationDeleteView(GestionRequiredMixin, DeleteView):
         return queryset
 
     def form_valid(self, form):
-        messages.success(self.request, 'Destination supprimée avec succès.')
-        return super().form_valid(form)
+        success_url = self.get_success_url()
+        self.object.active = False
+        self.object.save(update_fields=['active'])
+        messages.success(self.request, 'Destination désactivée avec succès.')
+        return HttpResponseRedirect(success_url)

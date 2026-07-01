@@ -59,10 +59,11 @@
                                 <a href="{% url 'gares:gare_update' gare.pk %}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                {% if user.has_global_access %}
-                                <a href="{% url 'gares:gare_delete' gare.pk %}" class="btn btn-sm btn-outline-danger">
+                                {% if user.is_super_admin and gare.active %}
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Désactiver"
+                                        data-bs-toggle="modal" data-bs-target="#deactivateGareModal{{ gare.pk }}">
                                     <i class="bi bi-trash"></i>
-                                </a>
+                                </button>
                                 {% endif %}
                             </td>
                         </tr>
@@ -70,6 +71,38 @@
                     </tbody>
                 </table>
             </div>
+            {% if user.is_super_admin %}
+            {% for gare in gares %}
+            <div class="modal fade" id="deactivateGareModal{{ gare.pk }}" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h6 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Désactiver la gare</h6>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-2">Voulez-vous désactiver :</p>
+                            <p class="fw-bold mb-2">{{ gare.nom }} ({{ gare.code }})</p>
+                            <p class="text-muted small mb-0">
+                                La gare ne sera plus proposée pour les nouveaux voyages/lignes, mais elle et son
+                                historique (voyages, billets) resteront conservés en base. Vous pourrez la
+                                réactiver plus tard.
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+                            <form method="post" action="{% url 'gares:gare_delete' gare.pk %}" class="mb-0">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="bi bi-slash-circle me-1"></i>Désactiver
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
             {% else %}
             <div class="text-center py-5 text-muted">
                 <i class="bi bi-building display-4"></i>

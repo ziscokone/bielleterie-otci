@@ -3,7 +3,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.http import HttpResponseRedirect
 
+from core.mixins import SuperAdminRequiredMixin
 from .models import Gare
 from .forms import GareForm
 
@@ -63,15 +65,19 @@ class GareUpdateView(GestionRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class GareDeleteView(GestionRequiredMixin, DeleteView):
-    """Supprimer une gare."""
+class GareDeleteView(SuperAdminRequiredMixin, DeleteView):
+    """
+    Désactive une gare (soft-delete).
+    On ne supprime jamais physiquement une gare : elle peut être référencée
+    par des voyages, destinations et billets passés. On la marque inactive.
+    """
     model = Gare
     template_name = 'gares/gare_confirm_delete.html'
     success_url = reverse_lazy('gares:gare_list')
 
-    def test_func(self):
-        return self.request.user.has_global_access
-
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, 'Gare supprimée avec succès.')
-        return super().delete(request, *args, **kwargs)
+    def form_valid(self, form):
+        success_url = self.get_success_url()
+        self.object.active = False
+        self.object.save(update_fields=['active'])
+        messages.success(self.request, 'Gare désactivée avec succès.')
+        return HttpResponseRedirect(success_url)
