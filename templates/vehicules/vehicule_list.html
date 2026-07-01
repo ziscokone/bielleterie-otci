@@ -446,10 +446,12 @@
                                    class="btn-action edit" title="Modifier">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="{% url 'vehicules:vehicule_delete' vehicule.pk %}"
-                                   class="btn-action del" title="Supprimer">
+                                {% if request.user.is_super_admin and vehicule.actif %}
+                                <button type="button" class="btn-action del" title="Désactiver"
+                                        data-bs-toggle="modal" data-bs-target="#deactivateVehiculeModal{{ vehicule.pk }}">
                                     <i class="bi bi-trash"></i>
-                                </a>
+                                </button>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -457,6 +459,38 @@
                 </tbody>
             </table>
         </div>
+
+        {% if request.user.is_super_admin %}
+        {% for vehicule in vehicules %}
+        <div class="modal fade" id="deactivateVehiculeModal{{ vehicule.pk }}" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h6 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Désactiver le véhicule</h6>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-2">Voulez-vous désactiver :</p>
+                        <p class="fw-bold mb-2">{{ vehicule.display_immat }} ({{ vehicule.modele.nom }})</p>
+                        <p class="text-muted small mb-0">
+                            Le véhicule ne pourra plus être assigné à de nouveaux voyages, mais il et son historique
+                            (voyages, réparations) resteront conservés en base. Vous pourrez le réactiver plus tard.
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+                        <form method="post" action="{% url 'vehicules:vehicule_delete' vehicule.pk %}" class="mb-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="bi bi-slash-circle me-1"></i>Désactiver
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
 
         {% else %}
         <div class="empty-state">

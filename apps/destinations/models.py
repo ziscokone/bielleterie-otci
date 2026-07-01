@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.functions import Lower
 
 
 class Destination(models.Model):
@@ -32,7 +33,13 @@ class Destination(models.Model):
         verbose_name = "Destination"
         verbose_name_plural = "Destinations"
         ordering = ['gare', 'ville_arrivee']
-        unique_together = ['gare', 'ligne', 'ville_arrivee']
+        constraints = [
+            models.UniqueConstraint(
+                'gare', 'ligne', Lower('ville_arrivee'),
+                name='destination_unique_gare_ligne_ville_ci',
+                violation_error_message="Une destination existe déjà pour cette gare, cette ligne et cette ville d'arrivée (la casse n'est pas prise en compte).",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.gare.ville} → {self.ville_arrivee} ({self.montant} FCFA)"

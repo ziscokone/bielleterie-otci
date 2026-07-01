@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q, Sum, Count
 from django.shortcuts import get_object_or_404, redirect, render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -239,15 +239,22 @@ class VehiculeUpdateView(AdminRequiredMixin, UpdateView):
         return context
 
 
-class VehiculeDeleteView(AdminRequiredMixin, DeleteView):
-    """Supprimer un véhicule."""
+class VehiculeDeleteView(SuperAdminRequiredMixin, DeleteView):
+    """
+    Désactive un véhicule (soft-delete).
+    On ne supprime jamais physiquement un véhicule : il peut être référencé
+    par des voyages, réparations et billets passés. On le marque inactif.
+    """
     model = Vehicule
     template_name = 'vehicules/vehicule_confirm_delete.html'
     success_url = reverse_lazy('vehicules:vehicule_list')
 
     def form_valid(self, form):
-        messages.success(self.request, 'Véhicule supprimé avec succès.')
-        return super().form_valid(form)
+        success_url = self.get_success_url()
+        self.object.actif = False
+        self.object.save(update_fields=['actif'])
+        messages.success(self.request, 'Véhicule désactivé avec succès.')
+        return HttpResponseRedirect(success_url)
 
 
 # Vues pour les réparations

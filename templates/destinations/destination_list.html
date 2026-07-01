@@ -50,8 +50,17 @@
     transition: all 0.15s;
     white-space: nowrap;
 }
-.btn-header.primary { background: #fff; color: var(--color-accent); border: none; }
-.btn-header.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); color: var(--color-accent); }
+/* Nouvelle Destination — vert succès plein */
+.btn-header.success { background: #198754; color: #fff; border: 1px solid transparent; }
+.btn-header.success:hover { background: #157347; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); color: #fff; }
+
+/* Exporter Excel — teal translucide (couleur de marque Excel) */
+.btn-header.export { background: rgba(20,184,166,0.22); color: #fff; border: 1px solid rgba(20,184,166,0.55); }
+.btn-header.export:hover { background: rgba(20,184,166,0.35); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); color: #fff; }
+
+/* Importer Excel — ambre translucide */
+.btn-header.import { background: rgba(245,158,11,0.22); color: #fff; border: 1px solid rgba(245,158,11,0.55); }
+.btn-header.import:hover { background: rgba(245,158,11,0.35); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); color: #fff; }
 
 /* ── Filtres ─────────────────────────────────────────────── */
 .filter-zone {
@@ -170,7 +179,7 @@
             <h4><i class="bi bi-geo-alt me-2"></i>Destinations</h4>
             <div class="d-flex gap-3 mt-3 flex-wrap">
                 <div class="header-stat">
-                    <div class="hs-val">{{ paginator.count|default:destinations|length }}</div>
+                    <div class="hs-val">{{ total_count }}</div>
                     <div class="hs-lbl">Total</div>
                 </div>
                 <div class="header-stat">
@@ -179,9 +188,21 @@
                 </div>
             </div>
         </div>
-        <a href="{% url 'destinations:destination_create' %}" class="btn-header primary">
-            <i class="bi bi-plus-circle"></i> Nouvelle Destination
-        </a>
+        <div class="d-flex gap-2 flex-wrap">
+            {% if request.user.has_global_access %}
+            <a href="{% url 'destinations:destination_export' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}"
+               class="btn-header export">
+                <i class="bi bi-file-earmark-excel"></i> Exporter Excel
+            </a>
+            <a href="{% url 'destinations:destination_import' %}"
+               class="btn-header import">
+                <i class="bi bi-file-earmark-arrow-up"></i> Importer Excel
+            </a>
+            {% endif %}
+            <a href="{% url 'destinations:destination_create' %}" class="btn-header success">
+                <i class="bi bi-plus-circle"></i> Nouvelle Destination
+            </a>
+        </div>
     </div>
 
     <!-- ── Filtres ── -->
@@ -211,7 +232,7 @@
         <div class="table-header">
             <span><i class="bi bi-geo-alt me-2" style="color:var(--color-accent)"></i>Liste des destinations</span>
             <span class="badge rounded-pill" style="background:#eef2ff;color:#4338ca;font-size:12px;font-weight:600">
-                {{ paginator.count|default:destinations|length }} destination{{ paginator.count|default:destinations|length|pluralize }}
+                {{ total_count }} destination{{ total_count|pluralize }}
             </span>
         </div>
 
