@@ -131,6 +131,7 @@ class ChauffeurListView(LoginRequiredMixin, ListView):
     model = Chauffeur
     template_name = 'personnel/chauffeur_list.html'
     context_object_name = 'chauffeurs'
+    paginate_by = 15
 
     def get_queryset(self):
         from django.db.models import Count
@@ -156,6 +157,7 @@ class ChauffeurListView(LoginRequiredMixin, ListView):
         context['nb_total']    = Chauffeur.objects.count()
         context['nb_actifs']   = Chauffeur.objects.filter(actif=True).count()
         context['nb_inactifs'] = Chauffeur.objects.filter(actif=False).count()
+        context['nb_resultats_filtres'] = context['paginator'].count
         return context
 
 
