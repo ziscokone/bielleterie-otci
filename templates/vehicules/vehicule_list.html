@@ -258,6 +258,33 @@
 .doc-item-badge.danger  { background: #fee2e2; color: #991b1b; }
 .doc-item-badge.orange  { background: #ffedd5; color: #9a3412; }
 .doc-item-badge.warning { background: #fef9c3; color: #854d0e; }
+
+/* Pagination — bleu nuit de l'application */
+.pagination-nuit { gap: 6px; }
+.pagination-nuit .page-item .page-link {
+    border: 1.5px solid var(--color-accent);
+    color: var(--color-accent);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 12.5px;
+    padding: 6px 14px;
+    background: #fff;
+    transition: all 0.15s;
+}
+.pagination-nuit .page-item .page-link:hover {
+    background: var(--color-accent);
+    color: #fff;
+}
+.pagination-nuit .page-item.active .page-link {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+    cursor: default;
+    font-weight: 700;
+}
+.pagination-nuit .page-item.active .page-link:hover {
+    background: var(--color-accent);
+}
 </style>
 {% endblock %}
 
@@ -384,7 +411,7 @@
         <div class="table-header">
             <span><i class="bi bi-bus-front me-2" style="color:var(--color-accent)"></i>Liste des véhicules</span>
             <span class="badge rounded-pill" style="background:#eef2ff;color:#4338ca;font-size:12px;font-weight:600">
-                {{ vehicules|length }} résultat{{ vehicules|length|pluralize }}
+                {{ nb_resultats_filtres }} résultat{{ nb_resultats_filtres|pluralize }}
             </span>
         </div>
 
@@ -490,6 +517,32 @@
             </div>
         </div>
         {% endfor %}
+        {% endif %}
+
+        {% if is_paginated %}
+        <nav class="d-flex justify-content-center py-3 border-top">
+            <ul class="pagination pagination-sm pagination-nuit mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1&q={{ search_query }}&statut={{ statut_filtre }}">Première</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&statut={{ statut_filtre }}">Précédent</a>
+                    </li>
+                {% endif %}
+                <li class="page-item active">
+                    <span class="page-link">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&statut={{ statut_filtre }}">Suivant</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ search_query }}&statut={{ statut_filtre }}">Dernière</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
         {% endif %}
 
         {% else %}

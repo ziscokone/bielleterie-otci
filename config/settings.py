@@ -176,6 +176,12 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Autorise les uploads jusqu'à 12 Mo (marge au-dessus de la limite métier de 10 Mo
+# sur les documents chauffeurs, cf. apps/personnel/views.py). Doit rester cohérent
+# avec client_max_body_size côté Nginx (voir DEPLOIEMENT_PRODUCTION.md, section 5.3).
+DATA_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024
+
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

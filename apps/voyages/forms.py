@@ -70,7 +70,10 @@ class VoyageForm(forms.ModelForm):
                 'min': '1',
                 'placeholder': '1, 2, 3...'
             }),
-            'vehicule': forms.Select(attrs={'class': 'form-select'}),
+            'vehicule': forms.Select(attrs={
+                'class': 'form-select searchable-select',
+                'data-placeholder': "Rechercher un véhicule (n° d'ordre ou immatriculation)...",
+            }),
             'chauffeur': forms.Select(attrs={'class': 'form-select'}),
             'convoyeur': forms.Select(attrs={'class': 'form-select'}),
             'statut': forms.Select(attrs={'class': 'form-select'}),

@@ -76,7 +76,10 @@ class ProgrammeDepartForm(forms.ModelForm):
                 'min': '1',
                 'placeholder': '1, 2, 3...'
             }),
-            'vehicule_defaut': forms.Select(attrs={'class': 'form-select'}),
+            'vehicule_defaut': forms.Select(attrs={
+                'class': 'form-select searchable-select',
+                'data-placeholder': "Rechercher un véhicule (n° d'ordre ou immatriculation)...",
+            }),
             'actif': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         labels = {

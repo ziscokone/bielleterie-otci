@@ -285,9 +285,9 @@ class Vehicule(models.Model):
 
     @property
     def display_immat(self):
-        """Retourne l'immatriculation avec le numéro d'ordre entre parenthèses si défini."""
+        """Retourne le numéro d'ordre suivi de l'immatriculation entre parenthèses si défini."""
         if self.numero_ordre:
-            return f"{self.immatriculation} ({self.numero_ordre})"
+            return f"{self.numero_ordre} ({self.immatriculation})"
         return self.immatriculation
 
     @property

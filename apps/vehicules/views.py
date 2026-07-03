@@ -88,6 +88,7 @@ class VehiculeListView(LoginRequiredMixin, ListView):
     model = Vehicule
     template_name = 'vehicules/vehicule_list.html'
     context_object_name = 'vehicules'
+    paginate_by = 15
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related('modele')
@@ -122,6 +123,7 @@ class VehiculeListView(LoginRequiredMixin, ListView):
         context['nb_en_reparation'] = all_vehicules.filter(
             reparations__statut__in=['en_attente', 'en_cours']
         ).distinct().count()
+        context['nb_resultats_filtres'] = context['paginator'].count
 
         # ── Alertes documents (expirés ou dans les 30 jours) ──────────────
         today = timezone.localdate()
