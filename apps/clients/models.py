@@ -1,7 +1,17 @@
+import uuid
+
 from django.db import models
 
 
 class Client(models.Model):
+    public_id = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        db_index=True,
+        verbose_name="Identifiant public",
+        help_text="Utilisé dans les URL à la place de l'identifiant interne, pour ne pas exposer le volume de clients."
+    )
     telephone = models.CharField(
         max_length=20,
         unique=True,

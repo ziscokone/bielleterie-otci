@@ -43,6 +43,8 @@ class ClientDetailView(LoginRequiredMixin, DetailView):
     model = Client
     template_name = 'clients/detail.html'
     context_object_name = 'client'
+    slug_field = 'public_id'
+    slug_url_kwarg = 'public_id'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

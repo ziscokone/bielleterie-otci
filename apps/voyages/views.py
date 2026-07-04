@@ -92,6 +92,8 @@ class VoyageDetailView(GestionRequiredMixin, DetailView):
     model = Voyage
     template_name = 'voyages/voyage_detail.html'
     context_object_name = 'voyage'
+    slug_field = 'public_id'
+    slug_url_kwarg = 'public_id'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -176,6 +178,8 @@ class VoyageUpdateView(GestionRequiredMixin, UpdateView):
     form_class = VoyageForm
     template_name = 'voyages/voyage_form.html'
     success_url = reverse_lazy('voyages:voyage_list')
+    slug_field = 'public_id'
+    slug_url_kwarg = 'public_id'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -202,6 +206,8 @@ class VoyageDeleteView(GestionRequiredMixin, DeleteView):
     model = Voyage
     template_name = 'voyages/voyage_confirm_delete.html'
     success_url = reverse_lazy('voyages:voyage_list')
+    slug_field = 'public_id'
+    slug_url_kwarg = 'public_id'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -224,12 +230,12 @@ class VoyageBordereauView(GestionRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        voyage_id = self.kwargs.get('pk')
+        voyage_public_id = self.kwargs.get('public_id')
         voyage = get_object_or_404(
             Voyage.objects.select_related(
                 'gare', 'ligne', 'vehicule', 'vehicule__modele'
             ),
-            pk=voyage_id
+            public_id=voyage_public_id
         )
 
         # Vérifier les permissions
@@ -294,12 +300,12 @@ class VoyageListePassagersView(GestionRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        voyage_id = self.kwargs.get('pk')
+        voyage_public_id = self.kwargs.get('public_id')
         voyage = get_object_or_404(
             Voyage.objects.select_related(
                 'gare', 'ligne', 'vehicule', 'vehicule__modele'
             ),
-            pk=voyage_id
+            public_id=voyage_public_id
         )
 
         # Vérifier les permissions
@@ -329,12 +335,12 @@ class VoyageRecapDestinationView(GestionRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        voyage_id = self.kwargs.get('pk')
+        voyage_public_id = self.kwargs.get('public_id')
         voyage = get_object_or_404(
             Voyage.objects.select_related(
                 'gare', 'ligne', 'vehicule', 'vehicule__modele'
             ),
-            pk=voyage_id
+            public_id=voyage_public_id
         )
 
         # Vérifier les permissions
@@ -381,7 +387,7 @@ def get_voyage_agents(request, pk):
     """
     try:
         # Récupérer le voyage
-        voyage = get_object_or_404(Voyage, pk=pk)
+        voyage = get_object_or_404(Voyage, public_id=pk)
 
         # Vérifier les permissions
         user = request.user
@@ -463,7 +469,7 @@ def save_voyage_agents(request, pk):
     """
     try:
         # Récupérer le voyage
-        voyage = get_object_or_404(Voyage, pk=pk)
+        voyage = get_object_or_404(Voyage, public_id=pk)
 
         # Vérifier les permissions
         user = request.user
@@ -538,7 +544,7 @@ def save_voyage_agents(request, pk):
 
                 for billet, nouveau_siege in zip(billets_a_reassigner.order_by('numero_siege'), sieges_libres):
                     reassignations.append({
-                        'billet_id': billet.pk,
+                        'billet_id': str(billet.public_id),
                         'client_nom': billet.client_nom,
                         'client_telephone': billet.client_telephone,
                         'ancien_siege': billet.numero_siege,
@@ -596,7 +602,7 @@ def get_voyage_depenses(request, pk):
     """
     try:
         # Récupérer le voyage
-        voyage = get_object_or_404(Voyage, pk=pk)
+        voyage = get_object_or_404(Voyage, public_id=pk)
 
         # Vérifier les permissions
         user = request.user
@@ -692,7 +698,7 @@ def add_voyage_depenses(request, pk):
     """
     try:
         # Récupérer le voyage
-        voyage = get_object_or_404(Voyage, pk=pk)
+        voyage = get_object_or_404(Voyage, public_id=pk)
 
         # Vérifier les permissions
         user = request.user
@@ -842,7 +848,7 @@ def get_voyage_bagages(request, pk):
     """
     Récupère la recette bagages d'un voyage.
     """
-    voyage = get_object_or_404(Voyage, pk=pk)
+    voyage = get_object_or_404(Voyage, public_id=pk)
     user = request.user
 
     # Vérification du rôle - Seuls Super Admin, PDG, Manager et Chef de Gare peuvent accéder
@@ -870,7 +876,7 @@ def save_voyage_bagages(request, pk):
     """
     Enregistre la recette bagages d'un voyage.
     """
-    voyage = get_object_or_404(Voyage, pk=pk)
+    voyage = get_object_or_404(Voyage, public_id=pk)
     user = request.user
 
     # Vérification du rôle - Seuls Super Admin, PDG, Manager et Chef de Gare peuvent modifier
@@ -941,7 +947,7 @@ def terminer_voyage(request, pk):
     """
     try:
         # Récupérer le voyage
-        voyage = get_object_or_404(Voyage, pk=pk)
+        voyage = get_object_or_404(Voyage, public_id=pk)
 
         # Vérifier l'authentification
         user = request.user
@@ -978,7 +984,7 @@ def terminer_voyage(request, pk):
 def print_reassignations(request, pk):
     """Page d'impression de la liste des réassignations de sièges pour un voyage."""
     from .models import ReassignationSiege
-    voyage = get_object_or_404(Voyage.objects.select_related('gare', 'ligne', 'vehicule'), pk=pk)
+    voyage = get_object_or_404(Voyage.objects.select_related('gare', 'ligne', 'vehicule'), public_id=pk)
 
     user = request.user
     if not user.has_global_access and user.gare:
@@ -1009,7 +1015,7 @@ def get_voyages_report(request, billet_id):
     """
     try:
         # Récupérer le billet
-        billet = get_object_or_404(Billet, pk=billet_id)
+        billet = get_object_or_404(Billet, public_id=billet_id)
         voyage_actuel = billet.voyage
 
         # Vérifier les permissions
@@ -1055,7 +1061,7 @@ def get_voyages_report(request, billet_id):
             places_libres = len(voyage.get_sieges_disponibles())
 
             voyages_groupes[groupe_label].append({
-                'id': voyage.id,
+                'id': str(voyage.public_id),
                 'heure_depart': voyage.heure_depart.strftime('%H:%M'),
                 'periode': voyage.get_periode_display(),
                 'numero_depart': voyage.numero_depart,
@@ -1087,7 +1093,7 @@ def get_disposition_voyage(request, voyage_id):
     """
     try:
         # Récupérer le voyage
-        voyage = get_object_or_404(Voyage, pk=voyage_id)
+        voyage = get_object_or_404(Voyage, public_id=voyage_id)
 
         # Vérifier les permissions
         user = request.user
@@ -1168,7 +1174,7 @@ def reporter_billet(request, billet_id):
     """
     try:
         # Récupérer le billet
-        ancien_billet = get_object_or_404(Billet, pk=billet_id)
+        ancien_billet = get_object_or_404(Billet, public_id=billet_id)
         voyage_actuel = ancien_billet.voyage
 
         # Vérifier les permissions
@@ -1204,7 +1210,7 @@ def reporter_billet(request, billet_id):
             }, status=400)
 
         # Récupérer le nouveau voyage
-        nouveau_voyage = get_object_or_404(Voyage, pk=nouveau_voyage_id)
+        nouveau_voyage = get_object_or_404(Voyage, public_id=nouveau_voyage_id)
 
         # Vérifier que le voyage est de la même gare et ligne
         if nouveau_voyage.gare != voyage_actuel.gare:
@@ -1414,7 +1420,7 @@ def creer_reparation_depuis_depense(request, depense_id):
 def demander_remboursement(request, billet_id):
     """Vue AJAX pour créer une demande de remboursement."""
     try:
-        billet = get_object_or_404(Billet, pk=billet_id)
+        billet = get_object_or_404(Billet, public_id=billet_id)
         voyage = billet.voyage
         user = request.user
 
@@ -1540,7 +1546,7 @@ def creer_ticket_gratuit(request, voyage_id):
         return JsonResponse({'success': False, 'error': 'Données invalides'}, status=400)
 
     try:
-        voyage = get_object_or_404(Voyage, pk=voyage_id)
+        voyage = get_object_or_404(Voyage, public_id=voyage_id)
         user = request.user
 
         if not user.has_global_access and voyage.gare != user.gare:
@@ -1606,7 +1612,7 @@ def creer_ticket_gratuit(request, voyage_id):
         return JsonResponse({
             'success': True,
             'message': f'Demande de ticket gratuit créée — siège {numero_siege} réservé, en attente d\'approbation',
-            'billet_id': billet.pk,
+            'billet_id': str(billet.public_id),
         })
 
     except Exception as e:

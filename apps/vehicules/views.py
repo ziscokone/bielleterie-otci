@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q, Sum, Count
 from django.shortcuts import get_object_or_404, redirect, render
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -908,6 +908,8 @@ def entretien_historique_ajax(request, pk):
 @require_http_methods(["GET"])
 def get_vehicule_km(request, pk):
     """Retourne le kilométrage actuel d'un véhicule (pré-remplissage du formulaire garage)."""
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
     try:
         vehicule = get_object_or_404(Vehicule, pk=pk)
         return JsonResponse({'success': True, 'kilometrage_actuel': vehicule.kilometrage_actuel or 0})
@@ -920,6 +922,8 @@ def get_types_reparation(request):
     Vue AJAX pour récupérer la liste des types de réparation actifs.
     Utilisé par le modal de création de réparation depuis une dépense.
     """
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
     try:
         types = TypeReparation.objects.filter(actif=True).order_by('nom')
         

@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -19,6 +21,15 @@ class Voyage(models.Model):
         ('termine', 'Terminé'),
         ('annule', 'Annulé'),
     ]
+
+    public_id = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        db_index=True,
+        verbose_name="Identifiant public",
+        help_text="Utilisé dans les URL à la place de l'identifiant interne, pour ne pas exposer le volume de voyages."
+    )
 
     numero_depart = models.PositiveIntegerField(
         verbose_name="Numéro de départ",

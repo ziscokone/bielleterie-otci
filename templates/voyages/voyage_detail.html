@@ -239,14 +239,14 @@
     </button>
     {% endif %}
     {% if voyage.get_nb_places_disponibles > 0 and voyage.statut != 'termine' %}
-    <a href="{% url 'guichet:vente' voyage.pk %}" class="btn-act-primary act-vendre">
+    <a href="{% url 'guichet:vente' voyage.public_id %}" class="btn-act-primary act-vendre">
       <i class="bi bi-cart-plus"></i>Vendre des billets
     </a>
     {% endif %}
 
     <!-- Actions secondaires -->
     {% if voyage.statut == 'termine' %}
-    <a href="{% url 'voyages:voyage_bordereau' voyage.pk %}" class="btn-act-secondary" target="_blank">
+    <a href="{% url 'voyages:voyage_bordereau' voyage.public_id %}" class="btn-act-secondary" target="_blank">
       <i class="bi bi-file-earmark-text"></i>Bordereau
     </a>
     {% else %}
@@ -255,14 +255,14 @@
       <i class="bi bi-file-earmark-text"></i>Bordereau
     </button>
     {% endif %}
-    <a href="{% url 'voyages:voyage_liste_passagers' voyage.pk %}" class="btn-act-secondary" target="_blank">
+    <a href="{% url 'voyages:voyage_liste_passagers' voyage.public_id %}" class="btn-act-secondary" target="_blank">
       <i class="bi bi-list-ul"></i>Liste Passagers
     </a>
-    <a href="{% url 'voyages:voyage_recap_destination' voyage.pk %}" class="btn-act-secondary" target="_blank">
+    <a href="{% url 'voyages:voyage_recap_destination' voyage.public_id %}" class="btn-act-secondary" target="_blank">
       <i class="bi bi-geo-alt"></i>Recap Destination
     </a>
     {% if voyage.reassignations.exists %}
-    <a href="{% url 'voyages:voyage_print_reassignations' voyage.pk %}" class="btn-act-secondary" target="_blank"
+    <a href="{% url 'voyages:voyage_print_reassignations' voyage.public_id %}" class="btn-act-secondary" target="_blank"
        style="background:#e74c3c; color:white;">
       <i class="bi bi-arrow-left-right"></i>Réassignations
     </a>
@@ -403,12 +403,12 @@
             <td class="text-center">
               <div class="d-flex gap-1 justify-content-center">
                 <button type="button" class="btn-print btn-reprint"
-                        data-billet-id="{{ billet.pk }}" title="Réimprimer (Duplicata)">
+                        data-billet-id="{{ billet.public_id }}" title="Réimprimer (Duplicata)">
                   <i class="bi bi-printer"></i>
                 </button>
                 {% if billet.statut == 'paye' and voyage.statut != 'termine' %}
                 <button type="button" class="btn-report btn-reporter"
-                        data-billet-id="{{ billet.pk }}"
+                        data-billet-id="{{ billet.public_id }}"
                         data-billet-numero="{{ billet.numero }}"
                         data-client-nom="{{ billet.client_nom }}"
                         data-client-telephone="{{ billet.client_telephone }}"
@@ -423,7 +423,7 @@
                 </span>
                 {% else %}
                 <button type="button" class="btn-rembourser btn-demander-remboursement"
-                        data-billet-id="{{ billet.pk }}"
+                        data-billet-id="{{ billet.public_id }}"
                         data-billet-numero="{{ billet.numero }}"
                         data-client-nom="{{ billet.client_nom }}"
                         data-montant="{{ billet.montant }}"
@@ -1116,7 +1116,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const duplicataModal = new bootstrap.Modal(document.getElementById('duplicataModal'));
     const duplicataContainer = document.getElementById('duplicataContainer');
     const agentsModal = new bootstrap.Modal(document.getElementById('agentsModal'));
-    const voyageId = {{ voyage.pk }};
+    const voyageId = "{{ voyage.public_id }}";
 
     // Fonction pour afficher le ticket duplicata
     function displayDuplicata(billet) {

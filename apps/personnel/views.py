@@ -2,7 +2,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, D
 from django.views import View
 from django.urls import reverse_lazy
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models import Q
@@ -17,14 +17,35 @@ from datetime import date
 
 
 # Vues pour les utilisateurs
-class UtilisateurListView(LoginRequiredMixin, ListView):
-    """Liste des utilisateurs."""
+class UtilisateurListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    """
+    Liste des utilisateurs.
+    Réservée aux rôles de gestion (accès global ou chef de gare) : un guichetier
+    n'a pas à consulter l'annuaire du personnel. Un chef de gare ne voit que le
+    personnel de sa propre gare.
+    """
     model = Utilisateur
     template_name = 'personnel/utilisateur_list.html'
     context_object_name = 'utilisateurs'
 
+    def test_func(self):
+        user = self.request.user
+        return user.has_global_access or user.is_chef_gare
+
+    def handle_no_permission(self):
+        if self.request.user.is_authenticated:
+            raise PermissionDenied("Vous n'avez pas les droits nécessaires pour accéder à cette page.")
+        return super().handle_no_permission()
+
+    def _base_queryset(self):
+        user = self.request.user
+        queryset = Utilisateur.objects.all()
+        if not user.has_global_access:
+            queryset = queryset.filter(gare=user.gare) if user.gare else queryset.none()
+        return queryset
+
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = self._base_queryset()
         search = self.request.GET.get('q')
         role   = self.request.GET.get('role', 'tous')
         if search:
@@ -39,11 +60,12 @@ class UtilisateurListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        base_qs = self._base_queryset()
         context['search_query'] = self.request.GET.get('q', '')
         context['role_filtre']  = self.request.GET.get('role', 'tous')
-        context['nb_total']     = Utilisateur.objects.count()
-        context['nb_actifs']    = Utilisateur.objects.filter(actif=True).count()
-        context['nb_inactifs']  = Utilisateur.objects.filter(actif=False).count()
+        context['nb_total']     = base_qs.count()
+        context['nb_actifs']    = base_qs.filter(actif=True).count()
+        context['nb_inactifs']  = base_qs.filter(actif=False).count()
         return context
 
 

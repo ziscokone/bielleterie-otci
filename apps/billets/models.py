@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -7,6 +9,15 @@ class Billet(models.Model):
     """
     Modèle représentant un billet de transport.
     """
+    public_id = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        db_index=True,
+        verbose_name="Identifiant public",
+        help_text="Utilisé dans les URL à la place de l'identifiant interne, pour ne pas exposer le volume de billets."
+    )
+
     STATUT_CHOICES = [
         ('reserve', 'Réservé'),
         ('paye', 'Payé'),

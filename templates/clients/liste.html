@@ -259,7 +259,7 @@
                             {{ client.date_creation|date:"d/m/Y" }}
                         </td>
                         <td class="text-end pe-4">
-                            <a href="{% url 'clients:client_detail' client.pk %}" class="btn-fiche">
+                            <a href="{% url 'clients:client_detail' client.public_id %}" class="btn-fiche">
                                 <i class="bi bi-eye"></i> Voir fiche
                             </a>
                         </td>

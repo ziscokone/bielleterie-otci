@@ -149,6 +149,8 @@ class VenteView(LoginRequiredMixin, DetailView):
     model = Voyage
     template_name = 'guichet/vente.html'
     context_object_name = 'voyage'
+    slug_field = 'public_id'
+    slug_url_kwarg = 'public_id'
 
     def get_queryset(self):
         """Filtrer les voyages par gare pour les utilisateurs non-global."""
@@ -184,7 +186,7 @@ def creer_billet(request, voyage_id):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
 
-    voyage = get_object_or_404(Voyage, pk=voyage_id)
+    voyage = get_object_or_404(Voyage, public_id=voyage_id)
     user = request.user
 
     # Vérifier les droits d'accès
@@ -303,7 +305,7 @@ def payer_reservation(request, billet_id):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Méthode non autorisée'}, status=405)
 
-    billet = get_object_or_404(Billet, pk=billet_id)
+    billet = get_object_or_404(Billet, public_id=billet_id)
     user = request.user
 
     # Vérifier les droits d'accès
@@ -333,7 +335,7 @@ def vendre_a_autre_client(request, billet_id):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
 
-    billet = get_object_or_404(Billet, pk=billet_id)
+    billet = get_object_or_404(Billet, public_id=billet_id)
     user = request.user
 
     if not user.has_global_access and billet.voyage.gare != user.gare:
@@ -390,7 +392,7 @@ def vendre_a_autre_client(request, billet_id):
 @login_required
 def get_sieges_status(request, voyage_id):
     """Retourne le statut actuel des sièges (pour mise à jour AJAX)."""
-    voyage = get_object_or_404(Voyage, pk=voyage_id)
+    voyage = get_object_or_404(Voyage, public_id=voyage_id)
 
     if not request.user.has_global_access and voyage.gare != request.user.gare:
         return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
@@ -442,7 +444,7 @@ class ReservationsListView(LoginRequiredMixin, ListView):
 @login_required
 def get_billet_info(request, billet_id):
     """Retourne les informations d'un billet pour réimpression."""
-    billet = get_object_or_404(Billet, pk=billet_id)
+    billet = get_object_or_404(Billet, public_id=billet_id)
     user = request.user
 
     # Vérifier les droits d'accès
@@ -458,7 +460,7 @@ def get_billet_info(request, billet_id):
 @login_required
 def get_destinations_voyage(request, billet_id):
     """Retourne les destinations disponibles pour le voyage d'un billet."""
-    billet = get_object_or_404(Billet, pk=billet_id)
+    billet = get_object_or_404(Billet, public_id=billet_id)
     user = request.user
 
     if not user.has_global_access and billet.voyage.gare != user.gare:

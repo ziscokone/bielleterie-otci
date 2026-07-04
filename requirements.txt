@@ -12,3 +12,6 @@ qrcode[pil]>=7.4
 django_otp>=1.4
 django-auditlog>=3.0
 django-ratelimit>=4.1
+
+# Cache (requis en prod pour CACHE_URL=redis://... — voir config/settings.py)
+redis>=5.0

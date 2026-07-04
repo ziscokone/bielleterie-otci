@@ -91,7 +91,7 @@
                                 <span>Gratuit</span>
                             </div>
                         </div>
-                        <a href="{% url 'voyages:voyage_detail' voyage.pk %}" class="btn btn-sm btn-outline-primary" title="Voir les détails du voyage">
+                        <a href="{% url 'voyages:voyage_detail' voyage.public_id %}" class="btn btn-sm btn-outline-primary" title="Voir les détails du voyage">
                             <i class="bi bi-eye me-1"></i>Voir détails
                         </a>
                     </div>
@@ -157,12 +157,12 @@
                                     <td>
                                         <button type="button"
                                                 class="btn btn-sm btn-success btn-payer"
-                                                data-id="{{ reservation.pk }}">
+                                                data-id="{{ reservation.public_id }}">
                                             <i class="bi bi-cash"></i> Payer
                                         </button>
                                         <button type="button"
                                                 class="btn btn-sm btn-outline-warning btn-vendre-autre"
-                                                data-id="{{ reservation.pk }}"
+                                                data-id="{{ reservation.public_id }}"
                                                 data-siege="{{ reservation.numero_siege }}"
                                                 title="Vendre à un autre client">
                                             <i class="bi bi-person-fill-gear"></i>
@@ -512,7 +512,7 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const voyageId = {{ voyage.pk }};
+    const voyageId = "{{ voyage.public_id }}";
     const form = document.getElementById('venteForm');
     const siegeGrid = document.getElementById('siegeGrid');
     const siegeInput = document.getElementById('siegeSelectionne');
@@ -1168,7 +1168,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const recapDiv = document.getElementById('gratuitRecapContent');
     const msgDiv = document.getElementById('gratuitMessage');
 
-    const voyageId = {{ voyage.pk }};
+    const voyageId = "{{ voyage.public_id }}";
 
     function showMsg(txt, type) {
         msgDiv.className = `alert alert-${type} mt-2`;
