@@ -8,6 +8,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <link href="{% static 'css/custom.css' %}" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -158,14 +161,16 @@
         }
 
         .login-info-content h2 {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
             margin-bottom: 1rem;
             color: #FFFFFF;
         }
 
         .login-info-content p {
-            font-size: 1.1rem;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-weight: 500;
+            font-size: 1rem;
             opacity: 0.95;
             line-height: 1.6;
             margin-bottom: 2rem;
@@ -209,7 +214,7 @@
             }
 
             .login-info-content h2 {
-                font-size: 2rem;
+                font-size: 1.65rem;
             }
         }
 
@@ -229,7 +234,7 @@
             }
 
             .login-info-content h2 {
-                font-size: 1.75rem;
+                font-size: 1.4rem;
             }
         }
     </style>
@@ -311,26 +316,16 @@
         <!-- Section DROITE - Informations -->
         <div class="login-info-section">
             <div class="login-info-content">
-                <h2>Gestion de Billetterie</h2>
-                <p>Simplifiez la gestion de vos voyages et billets avec notre plateforme moderne et intuitive.</p>
+                <h2>Suite de Gestion Transport</h2>
+                <p>De la vente de billets à la maintenance de la flotte — tout le back-office de votre compagnie, au même endroit.</p>
 
                 <div class="login-info-features">
+                    {% for module in modules_actifs %}
                     <div class="feature-item">
-                        <i class="bi bi-ticket-perforated"></i>
-                        <span>Vente de billets rapide et efficace</span>
+                        <i class="bi {{ module.icone }}"></i>
+                        <span>{{ module.nom }}</span>
                     </div>
-                    <div class="feature-item">
-                        <i class="bi bi-bus-front"></i>
-                        <span>Gestion complète des voyages</span>
-                    </div>
-                    <div class="feature-item">
-                        <i class="bi bi-graph-up"></i>
-                        <span>Rapports et statistiques en temps réel</span>
-                    </div>
-                    <div class="feature-item">
-                        <i class="bi bi-shield-check"></i>
-                        <span>Sécurisé et fiable</span>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
