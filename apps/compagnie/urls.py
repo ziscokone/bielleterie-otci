@@ -1,7 +1,8 @@
 from django.urls import path
+from . import views
 
 app_name = 'compagnie'
 
 urlpatterns = [
-    # URLs seront ajoutées plus tard si nécessaire
+    path('parametres/', views.CompagnieConfigView.as_view(), name='parametres'),
 ]

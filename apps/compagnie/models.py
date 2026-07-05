@@ -27,8 +27,63 @@ class Compagnie(models.Model):
         verbose_name="Message bas de ticket",
         help_text="Message affiché au bas du ticket client. Ex: Soyez à la gare 30 min avant le départ. BON VOYAGE !"
     )
+
+    # ── Alertes documents véhicules ──────────────────────────────────
+    # Un document non "actif" est totalement ignoré par les alertes, même si
+    # une date d'expiration existe encore en base pour un véhicule (rien
+    # n'est supprimé, juste ignoré). Les valeurs par défaut (30 / 10 jours,
+    # actif=True) reproduisent exactement le comportement codé en dur
+    # historiquement, pour ne rien changer tant que personne n'y touche.
+    alerte_assurance_active = models.BooleanField(
+        default=True, verbose_name="L'assurance expire"
+    )
+    alerte_assurance_jours = models.PositiveIntegerField(
+        default=30, verbose_name="Alerter X jours avant expiration (assurance)"
+    )
+    alerte_assurance_urgent_jours = models.PositiveIntegerField(
+        default=10, verbose_name="Seuil urgent en jours (assurance)"
+    )
+
+    alerte_visite_technique_active = models.BooleanField(
+        default=True, verbose_name="La visite technique expire"
+    )
+    alerte_visite_technique_jours = models.PositiveIntegerField(
+        default=30, verbose_name="Alerter X jours avant expiration (visite technique)"
+    )
+    alerte_visite_technique_urgent_jours = models.PositiveIntegerField(
+        default=10, verbose_name="Seuil urgent en jours (visite technique)"
+    )
+
+    alerte_carte_grise_active = models.BooleanField(
+        default=True, verbose_name="La carte grise expire"
+    )
+    alerte_carte_grise_jours = models.PositiveIntegerField(
+        default=30, verbose_name="Alerter X jours avant expiration (carte grise)"
+    )
+    alerte_carte_grise_urgent_jours = models.PositiveIntegerField(
+        default=10, verbose_name="Seuil urgent en jours (carte grise)"
+    )
+
+    alerte_licence_transport_active = models.BooleanField(
+        default=True, verbose_name="La licence de transport expire"
+    )
+    alerte_licence_transport_jours = models.PositiveIntegerField(
+        default=30, verbose_name="Alerter X jours avant expiration (licence transport)"
+    )
+    alerte_licence_transport_urgent_jours = models.PositiveIntegerField(
+        default=10, verbose_name="Seuil urgent en jours (licence transport)"
+    )
+
     date_creation = models.DateTimeField(auto_now_add=True)
     date_modification = models.DateTimeField(auto_now=True)
+
+    # Description des 4 documents véhicule surveillés : (clé, libellé, champ date sur Vehicule)
+    DOCUMENTS_VEHICULE = [
+        ('assurance', 'Assurance', 'date_expiration_assurance'),
+        ('visite_technique', 'Visite technique', 'date_expiration_visite_technique'),
+        ('carte_grise', 'Carte grise', 'date_expiration_carte_grise'),
+        ('licence_transport', 'Licence de transport', 'date_expiration_licence_transport'),
+    ]
 
     class Meta:
         verbose_name = "Compagnie"
@@ -36,6 +91,23 @@ class Compagnie(models.Model):
 
     def __str__(self):
         return self.nom
+
+    def get_documents_alertes_actifs(self):
+        """
+        Retourne la liste des documents véhicules à surveiller (ceux marqués
+        comme expirant), avec leur champ date et leurs seuils. Un document
+        désactivé est absent de cette liste et donc ignoré par les alertes.
+        """
+        resultat = []
+        for cle, label, champ_date in self.DOCUMENTS_VEHICULE:
+            if getattr(self, f'alerte_{cle}_active'):
+                resultat.append({
+                    'champ_date': champ_date,
+                    'label': label,
+                    'seuil_alerte': getattr(self, f'alerte_{cle}_jours'),
+                    'seuil_urgent': getattr(self, f'alerte_{cle}_urgent_jours'),
+                })
+        return resultat
 
     def save(self, *args, **kwargs):
         """Assure qu'il n'y a qu'une seule instance de Compagnie."""

@@ -198,6 +198,18 @@ class VehiculeForm(forms.ModelForm):
             'date_expiration_licence_transport': 'Date d\'expiration licence de transport',
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Un document marqué "n'expire pas" dans la config compagnie n'a pas
+        # sa raison d'être dans ce formulaire : on retire le champ plutôt que
+        # de laisser une date d'expiration inutile et source de confusion.
+        from apps.compagnie.models import Compagnie
+        compagnie = Compagnie.get_instance()
+        if compagnie:
+            for cle, _, champ_date in Compagnie.DOCUMENTS_VEHICULE:
+                if not getattr(compagnie, f'alerte_{cle}_active') and champ_date in self.fields:
+                    del self.fields[champ_date]
+
 
 class ReparationVehiculeForm(forms.ModelForm):
     """Formulaire pour l'entête d'une entrée au garage."""

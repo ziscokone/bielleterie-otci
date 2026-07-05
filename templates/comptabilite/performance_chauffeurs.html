@@ -196,8 +196,10 @@
       <small class="text-muted fw-normal">{{ nb_avec_voyage }} chauffeur{{ nb_avec_voyage|pluralize }} actif{{ nb_avec_voyage|pluralize }}</small>
     </div>
     <div class="card-body p-4">
-      <div class="chart-container" style="position:relative; height:{{ nb_avec_voyage|add:1 }}00px; min-height:300px; max-height:700px;">
-        <canvas id="perfChart"></canvas>
+      <div style="max-height:460px; overflow-y:auto;">
+        <div class="chart-container" style="position:relative; height:{{ chart_height_px }}px;">
+          <canvas id="perfChart"></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -300,6 +302,7 @@ document.addEventListener('DOMContentLoaded', function () {
         backgroundColor: colors,
         borderRadius: 6,
         borderSkipped: false,
+        maxBarThickness: 28,
       }]
     },
     options: {

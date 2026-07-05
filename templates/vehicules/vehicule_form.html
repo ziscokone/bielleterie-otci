@@ -476,26 +476,34 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                             {{ form.compagnie_assurance }}
                             {% if form.compagnie_assurance.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.compagnie_assurance.errors }}</div>{% endif %}
                         </div>
+                        {% if form.date_expiration_assurance %}
                         <div class="col-md-6">
                             <label class="field-label">{{ form.date_expiration_assurance.label }}</label>
                             {{ form.date_expiration_assurance }}
                             {% if form.date_expiration_assurance.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.date_expiration_assurance.errors }}</div>{% endif %}
                         </div>
+                        {% endif %}
+                        {% if form.date_expiration_visite_technique %}
                         <div class="col-md-6">
                             <label class="field-label">{{ form.date_expiration_visite_technique.label }}</label>
                             {{ form.date_expiration_visite_technique }}
                             {% if form.date_expiration_visite_technique.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.date_expiration_visite_technique.errors }}</div>{% endif %}
                         </div>
+                        {% endif %}
+                        {% if form.date_expiration_carte_grise %}
                         <div class="col-md-6">
                             <label class="field-label">{{ form.date_expiration_carte_grise.label }}</label>
                             {{ form.date_expiration_carte_grise }}
                             {% if form.date_expiration_carte_grise.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.date_expiration_carte_grise.errors }}</div>{% endif %}
                         </div>
+                        {% endif %}
+                        {% if form.date_expiration_licence_transport %}
                         <div class="col-md-6">
                             <label class="field-label">{{ form.date_expiration_licence_transport.label }}</label>
                             {{ form.date_expiration_licence_transport }}
                             {% if form.date_expiration_licence_transport.errors %}<div class="invalid-feedback d-block" style="font-size:12px;">{{ form.date_expiration_licence_transport.errors }}</div>{% endif %}
                         </div>
+                        {% endif %}
                     </div>
                 </div>
 

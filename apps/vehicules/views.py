@@ -125,30 +125,32 @@ class VehiculeListView(LoginRequiredMixin, ListView):
         ).distinct().count()
         context['nb_resultats_filtres'] = context['paginator'].count
 
-        # ── Alertes documents (expirés ou dans les 30 jours) ──────────────
+        # ── Alertes documents (seuils configurables par la compagnie) ─────
         today = timezone.localdate()
-        docs_fields = [
-            ('date_expiration_assurance', 'Assurance'),
-            ('date_expiration_visite_technique', 'Visite tech.'),
-            ('date_expiration_carte_grise', 'Carte grise'),
-            ('date_expiration_licence_transport', 'Licence'),
-        ]
+        labels_courts = {
+            'date_expiration_assurance': 'Assurance',
+            'date_expiration_visite_technique': 'Visite tech.',
+            'date_expiration_carte_grise': 'Carte grise',
+            'date_expiration_licence_transport': 'Licence',
+        }
+        documents_actifs = Compagnie.get_instance().get_documents_alertes_actifs()
+
         alertes_docs = []
         for v in Vehicule.objects.filter(actif=True).select_related('modele').order_by('immatriculation'):
             docs_alertes = []
-            for field, label in docs_fields:
-                date_exp = getattr(v, field)
+            for doc in documents_actifs:
+                date_exp = getattr(v, doc['champ_date'])
                 if date_exp:
                     delta = (date_exp - today).days
-                    if delta <= 30:
+                    if delta <= doc['seuil_alerte']:
                         if delta < 0:
                             niveau = 'danger'
-                        elif delta <= 10:
+                        elif delta <= doc['seuil_urgent']:
                             niveau = 'orange'
                         else:
                             niveau = 'warning'
                         docs_alertes.append({
-                            'label': label,
+                            'label': labels_courts[doc['champ_date']],
                             'niveau': niveau,
                             'delta': delta,
                             'abs_delta': abs(delta),

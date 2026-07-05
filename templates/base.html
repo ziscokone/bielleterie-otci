@@ -250,6 +250,13 @@
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li class="dropdown-header">{{ user.get_role_display }}</li>
+                        {% if user.role == 'super_admin' %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'compagnie:parametres' %}">
+                                <i class="bi bi-building-gear me-2"></i> Paramètres compagnie
+                            </a>
+                        </li>
+                        {% endif %}
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="post" action="{% url 'personnel:logout' %}" class="m-0">

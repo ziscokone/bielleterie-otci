@@ -20,6 +20,7 @@ urlpatterns = [
     path('vehicules/', include('apps.vehicules.urls')),
     path('programmes/', include('apps.programmes.urls')),
     path('voyages/', include('apps.voyages.urls')),
+    path('compagnie/', include('apps.compagnie.urls')),
 ]
 
 # Servir les fichiers media en développement

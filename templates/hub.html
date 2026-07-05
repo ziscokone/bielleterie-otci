@@ -41,6 +41,14 @@
                 <li><span class="dropdown-item-text text-muted small"><i class="bi bi-geo-alt me-1"></i>{{ user.gare.nom }}</span></li>
                 <li><hr class="dropdown-divider"></li>
                 {% endif %}
+                {% if user.role == 'super_admin' %}
+                <li>
+                    <a class="dropdown-item" href="{% url 'compagnie:parametres' %}">
+                        <i class="bi bi-building-gear me-2"></i> Paramètres compagnie
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                {% endif %}
                 <li>
                     <form method="post" action="{% url 'personnel:logout' %}" class="m-0">
                         {% csrf_token %}

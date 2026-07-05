@@ -638,6 +638,12 @@ class PerformanceChauffeurView(LoginRequiredMixin, UserPassesTestMixin, Template
         context['chart_labels_json'] = json.dumps([c.nom_complet for c in chauffeurs_actifs])
         context['chart_data_json']   = json.dumps([c.nb_voyages for c in chauffeurs_actifs])
 
+        # Hauteur du graphique : ~40px par chauffeur, avec un plancher pour
+        # qu'une barre unique ne s'étire pas sur toute la hauteur. Le conteneur
+        # parent (dans le template) est scrollable au-delà de 460px, donc pas
+        # de plafond ici : le graphique grandit avec le nombre de chauffeurs.
+        context['chart_height_px'] = max(nb_avec_voyage * 40, 140)
+
         return context
 
 
