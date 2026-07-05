@@ -245,11 +245,17 @@ class ChauffeurDetailView(LoginRequiredMixin, DetailView):
             date_depart__lte=date_fin
         ).select_related('gare', 'ligne', 'vehicule').order_by('-date_depart', '-heure_depart')
 
-        context['voyages']           = voyages_periode
         context['nb_voyages_periode'] = voyages_periode.count()
         context['nb_total']           = tous_voyages.count()
         context['nb_termines']        = voyages_periode.filter(statut='termine').count()
         context['nb_annules']         = voyages_periode.filter(statut='annule').count()
+
+        from django.core.paginator import Paginator
+        paginator = Paginator(voyages_periode, 10)
+        page_obj = paginator.get_page(self.request.GET.get('page', 1))
+        context['voyages']       = page_obj
+        context['page_obj']      = page_obj
+        context['is_paginated']  = page_obj.has_other_pages()
 
         # Voyages ce mois
         debut_mois = today.replace(day=1)

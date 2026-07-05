@@ -1723,7 +1723,13 @@ class ListeRemboursementsView(GestionRequiredMixin, TemplateView):
         from apps.gares.models import Gare
         gares = Gare.objects.filter(active=True).order_by('nom') if user.has_global_access else None
 
-        context['demandes'] = demandes.order_by('-date_demande')
+        from django.core.paginator import Paginator
+        paginator = Paginator(demandes.order_by('-date_demande'), 10)
+        page_obj = paginator.get_page(self.request.GET.get('page', 1))
+
+        context['demandes'] = page_obj
+        context['page_obj'] = page_obj
+        context['is_paginated'] = page_obj.has_other_pages()
         context['date_debut'] = date_debut
         context['date_fin'] = date_fin
         context['statut_filtre'] = statut_filtre
@@ -1812,7 +1818,13 @@ class DashboardReportsView(GestionRequiredMixin, TemplateView):
             ).order_by('nom_complet')
             gares = None
 
-        context['reports'] = reports.order_by('-date_report')[:100]  # Limiter à 100 derniers
+        from django.core.paginator import Paginator
+        paginator = Paginator(reports.order_by('-date_report'), 10)
+        page_obj = paginator.get_page(self.request.GET.get('page', 1))
+
+        context['reports'] = page_obj
+        context['page_obj'] = page_obj
+        context['is_paginated'] = page_obj.has_other_pages()
         context['total_reports'] = total_reports
         context['stats_guichetiers'] = stats_guichetiers
         context['stats_motifs'] = stats_motifs

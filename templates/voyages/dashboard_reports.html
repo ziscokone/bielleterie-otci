@@ -186,6 +186,33 @@
     color: #6b7280;
     display: block;
 }
+
+/* Pagination — bleu nuit de l'application */
+.pagination-nuit { gap: 6px; }
+.pagination-nuit .page-item .page-link {
+    border: 1.5px solid var(--color-accent);
+    color: var(--color-accent);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 12.5px;
+    padding: 6px 14px;
+    background: #fff;
+    transition: all 0.15s;
+}
+.pagination-nuit .page-item .page-link:hover {
+    background: var(--color-accent);
+    color: #fff;
+}
+.pagination-nuit .page-item.active .page-link {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+    cursor: default;
+    font-weight: 700;
+}
+.pagination-nuit .page-item.active .page-link:hover {
+    background: var(--color-accent);
+}
 </style>
 {% endblock %}
 
@@ -385,7 +412,7 @@
             <i class="bi bi-list-ul"></i>
             Détails des Reports
             <span class="ms-auto" style="font-size:12px;opacity:0.8;font-weight:400;">
-                {{ reports.count }} enregistrement{{ reports.count|pluralize }}
+                {{ page_obj.paginator.count }} enregistrement{{ page_obj.paginator.count|pluralize }}
             </span>
         </div>
 
@@ -475,6 +502,33 @@
                 </tbody>
             </table>
         </div>
+
+        {% if is_paginated %}
+        <nav class="d-flex justify-content-center py-3 border-top">
+            <ul class="pagination pagination-sm pagination-nuit mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1&date_debut={{ date_debut }}&date_fin={{ date_fin }}&guichetier={{ guichetier_id }}&gare={{ gare_id }}">Première</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&date_debut={{ date_debut }}&date_fin={{ date_fin }}&guichetier={{ guichetier_id }}&gare={{ gare_id }}">Précédent</a>
+                    </li>
+                {% endif %}
+                <li class="page-item active">
+                    <span class="page-link">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&date_debut={{ date_debut }}&date_fin={{ date_fin }}&guichetier={{ guichetier_id }}&gare={{ gare_id }}">Suivant</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&date_debut={{ date_debut }}&date_fin={{ date_fin }}&guichetier={{ guichetier_id }}&gare={{ gare_id }}">Dernière</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
         {% else %}
         <div class="empty-state">
             <i class="bi bi-inbox text-muted"></i>

@@ -638,6 +638,15 @@ class PerformanceChauffeurView(LoginRequiredMixin, UserPassesTestMixin, Template
         context['chart_labels_json'] = json.dumps([c.nom_complet for c in chauffeurs_actifs])
         context['chart_data_json']   = json.dumps([c.nb_voyages for c in chauffeurs_actifs])
 
+        # Pagination du tableau "Classement détaillé" (10/page) — le graphique
+        # ci-dessus reste basé sur la liste complète, seul le tableau est paginé.
+        paginator = Paginator(chauffeurs, 10)
+        page_obj = paginator.get_page(self.request.GET.get('page', 1))
+        context['paginator'] = paginator
+        context['page_obj'] = page_obj
+        context['is_paginated'] = page_obj.has_other_pages()
+        context['chauffeurs_page'] = page_obj
+
         # Hauteur du graphique : ~40px par chauffeur, avec un plancher pour
         # qu'une barre unique ne s'étire pas sur toute la hauteur. Le conteneur
         # parent (dans le template) est scrollable au-delà de 460px, donc pas
