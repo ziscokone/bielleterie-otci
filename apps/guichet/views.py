@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView, ListView, DetailView
 from django.http import JsonResponse
 from django.utils import timezone
@@ -14,9 +14,26 @@ from apps.destinations.models import Destination
 from apps.voyages.models import Voyage
 
 
-class DashboardView(LoginRequiredMixin, TemplateView):
-    """Dashboard principal du guichetier."""
+class DashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    """
+    Dashboard principal du guichetier (module Voyages).
+    Cette vue est aussi la page d'accueil du site ("/"), donc un utilisateur
+    connecté qui n'a pas le module Voyages parmi ses modules autorisés est
+    redirigé vers le hub des modules plutôt que de voir ce tableau de bord
+    (qui expose des données métier : recettes, billets vendus, réservations).
+    """
     template_name = 'guichet/dashboard.html'
+
+    def test_func(self):
+        user = self.request.user
+        if user.is_superuser or user.role == 'super_admin':
+            return True
+        return user.modules_autorises.filter(cle='voyages', actif=True).exists()
+
+    def handle_no_permission(self):
+        if self.request.user.is_authenticated:
+            return redirect('hub')
+        return super().handle_no_permission()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
