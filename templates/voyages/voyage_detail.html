@@ -430,10 +430,12 @@
             </td>
             <td class="text-center">
               <div class="d-flex gap-1 justify-content-center">
+                {% if billet.statut != 'reserve' %}
                 <button type="button" class="btn-print btn-reprint"
                         data-billet-id="{{ billet.public_id }}" title="Réimprimer (Duplicata)">
                   <i class="bi bi-printer"></i>
                 </button>
+                {% endif %}
                 {% if billet.statut == 'paye' and voyage.statut != 'termine' %}
                 <button type="button" class="btn-report btn-reporter"
                         data-billet-id="{{ billet.public_id }}"
