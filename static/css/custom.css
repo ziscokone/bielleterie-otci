@@ -753,12 +753,29 @@ a:hover {
         margin: 0;
     }
 
+    /* Empeche le contenu invisible du reste de la page (ex: grand tableau de
+       passagers) de compter dans la hauteur imprimable et de generer des
+       pages supplementaires vierges. */
+    html, body {
+        height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Neutralise le position:fixed des modales Bootstrap : sans ca, Chrome
+       reimprime le contenu fixe sur CHAQUE page generee (cause du "meme
+       ticket repete plusieurs fois" observe sur le duplicata). */
+    .modal {
+        position: absolute !important;
+    }
+
     body * {
         visibility: hidden;
     }
 
     #ticketsContainer,
     #ticketsContainer *,
+    #ticketsContainerModal,
+    #ticketsContainerModal *,
     #duplicataContainer,
     #duplicataContainer *,
     #ticketContainer,
@@ -767,9 +784,10 @@ a:hover {
     }
 
     #ticketsContainer,
+    #ticketsContainerModal,
     #duplicataContainer,
     #ticketContainer {
-        position: absolute;
+        position: fixed;
         left: 0;
         top: 0;
         width: 80mm;

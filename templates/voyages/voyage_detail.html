@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
+{% load static %}
 
 {% block title %}Point du Voyage - {{ voyage.ligne }}{% endblock %}
 
@@ -176,6 +177,33 @@
 
   .empty-state { text-align: center; padding: 52px 20px; color: #9ca3af; }
   .empty-state i { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+
+  /* Pagination — bleu nuit de l'application (meme design que la liste des destinations) */
+  .pagination-nuit { gap: 6px; }
+  .pagination-nuit .page-item .page-link {
+      border: 1.5px solid var(--color-accent);
+      color: var(--color-accent);
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 12.5px;
+      padding: 6px 14px;
+      background: #fff;
+      transition: all 0.15s;
+  }
+  .pagination-nuit .page-item .page-link:hover {
+      background: var(--color-accent);
+      color: #fff;
+  }
+  .pagination-nuit .page-item.active .page-link {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+      color: #fff;
+      cursor: default;
+      font-weight: 700;
+  }
+  .pagination-nuit .page-item.active .page-link:hover {
+      background: var(--color-accent);
+  }
 </style>
 {% endblock %}
 
@@ -351,9 +379,9 @@
           </tr>
         </thead>
         <tbody>
-          {% for billet in billets %}
+          {% for billet in page_obj %}
           <tr>
-            <td class="text-center text-muted" style="font-size:12px">{{ forloop.counter }}</td>
+            <td class="text-center text-muted" style="font-size:12px">{{ forloop.counter0|add:page_obj.start_index }}</td>
             <td><strong>{{ billet.client_nom }}</strong></td>
             <td><i class="bi bi-telephone me-1 text-muted"></i>{{ billet.client_telephone }}</td>
             <td class="text-center">
@@ -448,6 +476,33 @@
         </tfoot>
       </table>
     </div>
+
+    {% if is_paginated %}
+    <nav class="d-flex justify-content-center py-3 border-top">
+        <ul class="pagination pagination-sm pagination-nuit mb-0">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">Première</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Précédent</a>
+                </li>
+            {% endif %}
+            <li class="page-item active">
+                <span class="page-link">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivant</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Dernière</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
     {% else %}
     <div class="empty-state">
       <i class="bi bi-inbox text-muted"></i>
@@ -552,7 +607,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                <button type="button" class="btn btn-primary" onclick="window.print()">
+                <button type="button" class="btn btn-primary" onclick="imprimerTicket(document.getElementById('duplicataContainer').innerHTML, TICKET_CSS_HREF)">
                     <i class="bi bi-printer me-2"></i>Imprimer
                 </button>
             </div>
@@ -1111,7 +1166,10 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/print-ticket.js' %}"></script>
 <script>
+const TICKET_CSS_HREF = "{% static 'css/custom.css' %}";
+
 document.addEventListener('DOMContentLoaded', function() {
     const duplicataModal = new bootstrap.Modal(document.getElementById('duplicataModal'));
     const duplicataContainer = document.getElementById('duplicataContainer');

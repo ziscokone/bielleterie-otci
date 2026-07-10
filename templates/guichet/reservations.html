@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
+{% load static %}
 
 {% block title %}Réservations - Gestion Billetterie{% endblock %}
 
@@ -249,7 +250,10 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/print-ticket.js' %}"></script>
 <script>
+const TICKET_CSS_HREF = "{% static 'css/custom.css' %}";
+
 document.addEventListener('DOMContentLoaded', function() {
 
     // --- Fonctions ticket (impression) ---
@@ -449,7 +453,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 vendreAutreModal.hide();
                 displayTicket(data.billet);
-                setTimeout(() => window.print(), 150);
+                setTimeout(() => imprimerTicket(document.getElementById('ticketContainer').innerHTML, TICKET_CSS_HREF), 150);
                 const row = document.querySelector(`button.btn-vendre-autre[data-id="${billetId}"]`);
                 if (row) row.closest('tr').remove();
             } else {
@@ -484,7 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     displayTicket(data.billet);
-                    setTimeout(() => window.print(), 100);
+                    setTimeout(() => imprimerTicket(document.getElementById('ticketContainer').innerHTML, TICKET_CSS_HREF), 100);
                     row.remove();
                 } else {
                     alert(data.error);

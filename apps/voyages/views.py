@@ -2,6 +2,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, D
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db.models import Q, Count, Max
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, render
@@ -125,6 +126,13 @@ class VoyageDetailView(GestionRequiredMixin, DetailView):
         context['billets'] = billets
         context['billets_payes'] = billets_payes
         context['billets_reserves'] = billets.filter(statut='reserve')
+
+        # Pagination de la liste des passagers (les stats ci-dessous portent
+        # toujours sur `billets`/`billets_payes`, la liste complète non paginee)
+        paginator = Paginator(billets, 10)
+        page_number = self.request.GET.get('page')
+        context['page_obj'] = paginator.get_page(page_number)
+        context['is_paginated'] = paginator.num_pages > 1
 
         # Calculer les statistiques
         nb_payes = billets_payes.count()

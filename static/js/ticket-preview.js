@@ -10,7 +10,7 @@
 (function () {
     function billetDemo(utiliserSouche, messageBasTicket, compagnieNom, compagnieLogo) {
         return {
-            numero: 'DEMO-000000',
+            numero: 'DEMO000000',
             numero_depart: '1',
             client_nom: 'Client Démo',
             numero_siege: 12,

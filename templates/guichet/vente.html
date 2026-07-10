@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
+{% load static %}
 
 {% block title %}Vente - {{ voyage.ligne }} - Gestion Billetterie{% endblock %}
 
@@ -485,24 +486,26 @@
     </div>
 </div>
 
-<!-- Modal d'impression (pour les réservations uniquement) -->
+<!-- Modal de confirmation (pour les réservations uniquement) -->
+<!-- Volontairement sans bouton "Imprimer" : un ticket imprime pour une
+     reservation non payee serait visuellement identique a un vrai billet
+     paye (pas de filigrane distinctif), ce qui ouvre un risque de fraude
+     a l'embarquement. L'impression n'est possible qu'au moment du paiement
+     reel de la reservation (bouton "Payer" dans reservations.html). -->
 <div class="modal fade" id="printModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-printer me-2"></i>Réservation créée
+                    <i class="bi bi-bookmark-check me-2"></i>Réservation créée
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="ticketsContainerModal">
-                <!-- Les tickets de réservation seront insérés ici -->
+                <!-- Récap de la réservation (non imprimable) -->
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                <button type="button" class="btn btn-primary" onclick="window.print()">
-                    <i class="bi bi-printer me-2"></i>Imprimer
-                </button>
             </div>
         </div>
     </div>
@@ -510,7 +513,10 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/print-ticket.js' %}"></script>
 <script>
+const TICKET_CSS_HREF = "{% static 'css/custom.css' %}";
+
 document.addEventListener('DOMContentLoaded', function() {
     const voyageId = "{{ voyage.public_id }}";
     const form = document.getElementById('venteForm');
@@ -728,7 +734,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     // Petit délai pour que le DOM se mette à jour
                     setTimeout(() => {
-                        window.print();
+                        imprimerTicket(document.getElementById('ticketsContainer').innerHTML, TICKET_CSS_HREF);
                     }, 150);
                 } else {
                     // Si c'est une réservation, afficher dans le modal
@@ -1109,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 vendreAutreModal.hide();
                 displayTickets([data.billet]);
-                setTimeout(() => window.print(), 150);
+                setTimeout(() => imprimerTicket(document.getElementById('ticketsContainer').innerHTML, TICKET_CSS_HREF), 150);
                 refreshSeats();
                 // Supprimer la ligne de réservation du tableau
                 const row = document.querySelector(`button.btn-vendre-autre[data-id="${billetId}"]`);
@@ -1144,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     displayTickets([data.billet]);
                     // Lancer l'impression automatique pour paiement de réservation
                     setTimeout(() => {
-                        window.print();
+                        imprimerTicket(document.getElementById('ticketsContainer').innerHTML, TICKET_CSS_HREF);
                     }, 100);
                     refreshSeats();
                     // Supprimer la ligne de réservation

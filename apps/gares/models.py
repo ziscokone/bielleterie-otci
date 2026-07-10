@@ -55,18 +55,21 @@ class Gare(models.Model):
     def generer_numero_ticket(self):
         """
         Génère un nouveau numéro de ticket unique pour cette gare.
-        Format: {CODE}-{ANNEE}{MOIS}-{SEQUENCE:05d}
-        Ex: CKY-202601-00001
+        Format: {CODE}{ANNEE}{MOIS}{SEQUENCE:05d}
+        Ex: CKY20260100001
 
         La séquence se réinitialise automatiquement chaque mois.
         Synchronise avec la BD pour éviter les doublons après migration.
+
+        Les billets crees avant ce format (avec tirets, ex: CKY-202601-00001)
+        gardent leur numero d'origine : aucune renumerotation retroactive.
         """
         from django.utils import timezone
         from apps.billets.models import Billet
 
         now = timezone.now()
         mois_actuel = now.strftime('%Y%m')
-        prefixe = f"{self.code}-{mois_actuel}-"
+        prefixe = f"{self.code}{mois_actuel}"
 
         # Réinitialiser le compteur si on change de mois
         if self.mois_dernier_ticket != mois_actuel:
@@ -81,8 +84,8 @@ class Gare(models.Model):
 
         if dernier_billet:
             try:
-                # Extraire la séquence du numéro existant (ex: "00044" -> 44)
-                sequence_existante = int(dernier_billet.numero.split('-')[-1])
+                # Extraire la séquence du numéro existant (ex: "...00044" -> 44)
+                sequence_existante = int(dernier_billet.numero[len(prefixe):])
                 # S'assurer que notre compteur est au moins égal
                 if self.dernier_numero_ticket < sequence_existante:
                     self.dernier_numero_ticket = sequence_existante
