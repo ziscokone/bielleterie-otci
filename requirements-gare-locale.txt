@@ -1,0 +1,11 @@
+# Dépendances additionnelles pour un poste guichet autonome hors-ligne (Windows).
+# Installation : pip install -r requirements.txt -r requirements-gare-locale.txt
+-r requirements.txt
+
+# Serveur WSGI pour un déploiement local durable (équivalent Windows de Gunicorn,
+# utilisé en production sur le VPS — voir DEPLOIEMENT_PRODUCTION.md).
+waitress>=3.0
+
+# Client HTTP utilisé par les commandes sync_push/sync_pull (apps.sync) pour
+# dialoguer avec le serveur central.
+requests>=2.31

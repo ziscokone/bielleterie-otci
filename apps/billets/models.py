@@ -96,6 +96,13 @@ class Billet(models.Model):
         verbose_name="Date de paiement"
     )
     date_modification = models.DateTimeField(auto_now=True)
+    synced_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name="Synchronisé le",
+        help_text="Renseigné quand ce billet, créé sur un poste gare hors-ligne, a été remonté vers le serveur central."
+    )
 
     # Champs pour la gestion des reports
     reporte_vers_billet = models.ForeignKey(

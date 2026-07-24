@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.core.exceptions import ValidationError
 
@@ -69,6 +71,14 @@ class Depense(models.Model):
     Modèle représentant une dépense liée à un voyage.
     Permet de suivre toutes les sorties de caisse pour chaque voyage.
     """
+    public_id = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        db_index=True,
+        verbose_name="Identifiant public",
+        help_text="Identifiant stable utilisé pour la synchronisation depuis un poste gare hors-ligne."
+    )
     voyage = models.ForeignKey(
         'voyages.Voyage',
         on_delete=models.CASCADE,
@@ -112,6 +122,13 @@ class Depense(models.Model):
     )
     date_creation = models.DateTimeField(auto_now_add=True, verbose_name="Date de saisie")
     date_modification = models.DateTimeField(auto_now=True)
+    synced_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name="Synchronisé le",
+        help_text="Renseigné quand cette dépense, saisie sur un poste gare hors-ligne, a été remontée vers le serveur central."
+    )
 
     class Meta:
         verbose_name = "Dépense"

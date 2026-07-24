@@ -24,6 +24,13 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 _allowed_hosts = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(',') if h.strip()]
 
+# ─── Synchronisation poste gare hors-ligne ↔ serveur central (apps.sync) ─────
+# Utilisé uniquement côté poste gare (management commands sync_push/sync_pull) :
+# URL du serveur central et jeton propre à cette gare (voir `create_gare_token`,
+# à exécuter côté central). Laisser vide sur le serveur central lui-même.
+SYNC_CENTRAL_URL = os.environ.get('SYNC_CENTRAL_URL', '')
+SYNC_TOKEN = os.environ.get('SYNC_TOKEN', '')
+
 
 
 # Application definition
@@ -56,6 +63,7 @@ INSTALLED_APPS = [
     'apps.clients',
     'apps.guichet',
     'apps.comptabilite',
+    'apps.sync',
 
 ]
 

@@ -21,6 +21,7 @@ urlpatterns = [
     path('programmes/', include('apps.programmes.urls')),
     path('voyages/', include('apps.voyages.urls')),
     path('compagnie/', include('apps.compagnie.urls')),
+    path('api/sync/', include('apps.sync.urls')),
 ]
 
 # Servir les fichiers media en développement

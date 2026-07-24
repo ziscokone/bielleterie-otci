@@ -256,15 +256,19 @@
             data-bs-toggle="modal" data-bs-target="#agentsModal">
       <i class="bi bi-people-fill"></i>Agents du voyage
     </button>
+    {% if voyage.statut != 'termine' %}
     <button type="button" class="btn-act-primary act-depenses"
             data-bs-toggle="modal" data-bs-target="#depensesModal">
       <i class="bi bi-cash-coin"></i>Dépenses
     </button>
+    {% endif %}
+    {% if voyage.statut != 'termine' %}
     {% if user.is_super_admin or user.is_pdg or user.is_chef_gare or user.is_manager %}
     <button type="button" class="btn-act-primary act-bagages"
             data-bs-toggle="modal" data-bs-target="#bagagesModal">
       <i class="bi bi-luggage"></i>Recette Bagages
     </button>
+    {% endif %}
     {% endif %}
     {% if voyage.get_nb_places_disponibles > 0 and voyage.statut != 'termine' %}
     <a href="{% url 'guichet:vente' voyage.public_id %}" class="btn-act-primary act-vendre">

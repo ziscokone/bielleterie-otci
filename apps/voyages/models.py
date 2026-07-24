@@ -108,6 +108,13 @@ class Voyage(models.Model):
     notes = models.TextField(blank=True, verbose_name="Notes")
     date_creation = models.DateTimeField(auto_now_add=True)
     date_modification = models.DateTimeField(auto_now=True)
+    synced_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name="Synchronisé le",
+        help_text="Renseigné quand ce voyage, créé sur un poste gare hors-ligne, a été remonté vers le serveur central."
+    )
 
     class Meta:
         verbose_name = "Voyage"

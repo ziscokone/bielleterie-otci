@@ -748,49 +748,20 @@ a:hover {
 }
 
 @media print {
+    /*
+     * Tous les tickets s'impriment desormais via un iframe isole
+     * (static/js/print-ticket.js) qui ne contient QUE le ticket a imprimer,
+     * rien d'autre autour. Il n'y a donc plus besoin de "cacher le reste de
+     * la page" ici (visibility:hidden / position:fixed sur les conteneurs) :
+     * ces anciennes regles, utiles quand on imprimait encore depuis la page
+     * complete, forcaient le contenu dans une hauteur figee et tronquaient
+     * silencieusement les lots de plusieurs tickets au-dela d'environ 2
+     * tickets. Ne garder ici que le format papier et le style visuel du
+     * ticket, dont l'iframe a besoin (il charge ce fichier CSS aussi).
+     */
     @page {
         size: 80mm auto;
         margin: 0;
-    }
-
-    /* Empeche le contenu invisible du reste de la page (ex: grand tableau de
-       passagers) de compter dans la hauteur imprimable et de generer des
-       pages supplementaires vierges. */
-    html, body {
-        height: 0 !important;
-        overflow: hidden !important;
-    }
-
-    /* Neutralise le position:fixed des modales Bootstrap : sans ca, Chrome
-       reimprime le contenu fixe sur CHAQUE page generee (cause du "meme
-       ticket repete plusieurs fois" observe sur le duplicata). */
-    .modal {
-        position: absolute !important;
-    }
-
-    body * {
-        visibility: hidden;
-    }
-
-    #ticketsContainer,
-    #ticketsContainer *,
-    #ticketsContainerModal,
-    #ticketsContainerModal *,
-    #duplicataContainer,
-    #duplicataContainer *,
-    #ticketContainer,
-    #ticketContainer * {
-        visibility: visible;
-    }
-
-    #ticketsContainer,
-    #ticketsContainerModal,
-    #duplicataContainer,
-    #ticketContainer {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 80mm;
     }
 
     .ticket-preview {
@@ -849,16 +820,6 @@ a:hover {
         color: rgba(100, 100, 100, 0.12) !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
-    }
-
-    .no-print {
-        display: none !important;
-    }
-
-    /* Masquer les éléments du modal lors de l'impression */
-    .modal-header,
-    .modal-footer {
-        display: none !important;
     }
 }
 

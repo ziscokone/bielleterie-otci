@@ -210,6 +210,12 @@ def creer_billet(request, voyage_id):
     if not user.has_global_access and voyage.gare != user.gare:
         return JsonResponse({'success': False, 'error': 'Accès non autorisé'})
 
+    if voyage.statut == 'termine':
+        return JsonResponse({
+            'success': False,
+            'error': 'Ce voyage est terminé, impossible de vendre ou réserver un billet'
+        })
+
     client_nom = request.POST.get('client_nom', '').strip()
     client_telephone = request.POST.get('client_telephone', '').strip()
     destination_id = request.POST.get('destination_id')
@@ -335,6 +341,12 @@ def payer_reservation(request, billet_id):
             'error': 'Ce billet est déjà payé'
         })
 
+    if billet.voyage.statut == 'termine':
+        return JsonResponse({
+            'success': False,
+            'error': 'Ce voyage est terminé, impossible de payer cette réservation'
+        })
+
     # Récupérer le moyen de paiement (par défaut cash)
     moyen_paiement = request.POST.get('moyen_paiement', 'cash')
     billet.payer(moyen_paiement=moyen_paiement)
@@ -360,6 +372,12 @@ def vendre_a_autre_client(request, billet_id):
 
     if billet.statut == 'paye':
         return JsonResponse({'success': False, 'error': 'Ce billet est déjà payé'})
+
+    if billet.voyage.statut == 'termine':
+        return JsonResponse({
+            'success': False,
+            'error': 'Ce voyage est terminé, impossible de vendre ce billet'
+        })
 
     client_nom = request.POST.get('client_nom', '').strip()
     client_telephone = request.POST.get('client_telephone', '').strip()

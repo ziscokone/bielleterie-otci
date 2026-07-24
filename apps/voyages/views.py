@@ -717,6 +717,12 @@ def add_voyage_depenses(request, pk):
             if voyage.gare != user.gare:
                 return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
 
+        if voyage.statut == 'termine':
+            return JsonResponse({
+                'success': False,
+                'error': 'Ce voyage est terminé, impossible d\'ajouter une dépense'
+            }, status=400)
+
         # Récupérer les données JSON
         data = json.loads(request.body)
         depenses_list = data.get('depenses', [])
@@ -900,6 +906,12 @@ def save_voyage_bagages(request, pk):
             'success': False,
             'error': 'Vous n\'avez pas accès à ce voyage'
         }, status=403)
+
+    if voyage.statut == 'termine':
+        return JsonResponse({
+            'success': False,
+            'error': 'Ce voyage est terminé, impossible de modifier la recette bagages'
+        }, status=400)
 
     try:
         data = json.loads(request.body)

@@ -9,6 +9,16 @@
  * ticket, ce risque disparait completement : il n'y a rien d'autre a cacher.
  */
 function imprimerTicket(html, cssHref) {
+    // Chrome semble tronquer silencieusement le contenu au-dela d'une
+    // certaine hauteur quand @page utilise une hauteur "auto" (constate
+    // avec des lots de plusieurs tickets, coupes en plein milieu du 2e
+    // ticket peu importe le nombre demande). On calcule donc une hauteur
+    // de page FIXE et explicite, dimensionnee pour le nombre reel de
+    // tickets du lot, au lieu de laisser Chrome deviner avec "auto".
+    const nbTickets = (html.match(/class="ticket-preview/g) || []).length || 1;
+    const HAUTEUR_PAR_TICKET_MM = 160; // marge large : ticket + souche + message bas
+    const hauteurPageMm = nbTickets * HAUTEUR_PAR_TICKET_MM + 20;
+
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
     iframe.style.left = '-9999px';
@@ -45,6 +55,7 @@ function imprimerTicket(html, cssHref) {
     iframe.srcdoc =
         '<!DOCTYPE html><html><head><meta charset="utf-8">' +
         '<link rel="stylesheet" href="' + cssHref + '">' +
+        '<style>@page { size: 80mm ' + hauteurPageMm + 'mm; margin: 0; }</style>' +
         '</head><body><div id="ticketsContainer">' + html + '</div></body></html>';
 
     document.body.appendChild(iframe);

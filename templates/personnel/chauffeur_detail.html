@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load static %}
 
 {% block title %}Fiche — {{ chauffeur.nom_complet }}{% endblock %}
 
@@ -615,7 +616,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 

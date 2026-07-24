@@ -1,3 +1,6 @@
+import hashlib
+import secrets
+
 from django.db import models
 
 
@@ -96,3 +99,62 @@ class Gare(models.Model):
         self.save(update_fields=['dernier_numero_ticket', 'mois_dernier_ticket'])
 
         return f"{prefixe}{self.dernier_numero_ticket:05d}"
+
+
+class GareSyncToken(models.Model):
+    """
+    Jeton d'authentification machine-à-machine utilisé par un poste de guichet
+    hors-ligne pour synchroniser ses données avec le serveur central (apps.sync).
+    Le jeton en clair n'est jamais stocké : seul son hash est conservé.
+    """
+    gare = models.OneToOneField(
+        Gare,
+        on_delete=models.CASCADE,
+        related_name='sync_token',
+        verbose_name="Gare"
+    )
+    token_hash = models.CharField(max_length=64, unique=True, editable=False)
+    actif = models.BooleanField(default=True, verbose_name="Actif")
+    date_creation = models.DateTimeField(auto_now_add=True)
+    derniere_utilisation = models.DateTimeField(null=True, blank=True, verbose_name="Dernière utilisation")
+
+    class Meta:
+        verbose_name = "Jeton de synchronisation gare"
+        verbose_name_plural = "Jetons de synchronisation gare"
+
+    def __str__(self):
+        return f"Jeton sync — {self.gare.nom}"
+
+    @staticmethod
+    def generer_pour(gare):
+        """
+        Génère un nouveau jeton en clair pour une gare (remplace l'ancien s'il existe)
+        et retourne ce jeton en clair — c'est la seule fois où il est disponible.
+        """
+        token_clair = secrets.token_urlsafe(32)
+        GareSyncToken.objects.update_or_create(
+            gare=gare,
+            defaults={
+                'token_hash': hashlib.sha256(token_clair.encode()).hexdigest(),
+                'actif': True,
+            }
+        )
+        return token_clair
+
+    @staticmethod
+    def verifier(token_clair):
+        """Retourne la Gare correspondant au jeton fourni (actif), ou None."""
+        if not token_clair:
+            return None
+        token_hash = hashlib.sha256(token_clair.encode()).hexdigest()
+        try:
+            jeton = GareSyncToken.objects.select_related('gare').get(
+                token_hash=token_hash, actif=True
+            )
+        except GareSyncToken.DoesNotExist:
+            return None
+
+        from django.utils import timezone
+        jeton.derniere_utilisation = timezone.now()
+        jeton.save(update_fields=['derniere_utilisation'])
+        return jeton.gare
