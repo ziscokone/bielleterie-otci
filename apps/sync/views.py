@@ -31,7 +31,7 @@ def _reponse_non_autorise():
 
 @csrf_exempt
 @require_GET
-@ratelimit(key='ip', rate='60/m', method='GET', block=True)
+@ratelimit(key='header:authorization', rate='60/m', method='GET', block=True)
 def ping(request):
     """Vérifie la joignabilité du serveur et la validité du jeton (utilisé avant push/pull)."""
     gare = _authentifier(request)
@@ -42,7 +42,7 @@ def ping(request):
 
 @csrf_exempt
 @require_POST
-@ratelimit(key='ip', rate='20/m', method='POST', block=True)
+@ratelimit(key='header:authorization', rate='20/m', method='POST', block=True)
 def push(request):
     """Reçoit les nouveautés (Voyages/Billets/Clients/Dépenses) d'une gare hors-ligne."""
     gare = _authentifier(request)
@@ -80,7 +80,7 @@ def push(request):
 
 @csrf_exempt
 @require_GET
-@ratelimit(key='ip', rate='20/m', method='GET', block=True)
+@ratelimit(key='header:authorization', rate='20/m', method='GET', block=True)
 def pull(request):
     """Renvoie les données de référence à jour pour la gare authentifiée."""
     gare = _authentifier(request)
