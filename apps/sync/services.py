@@ -100,36 +100,64 @@ def _upsert_client(data):
 
 
 def _upsert_voyage(data, gare):
+    """
+    Upsert d'un voyage par public_id. Contrairement à un simple get_or_create, les champs
+    qui évoluent après la création (statut — ex: passage à "termine" —, véhicule/chauffeur/
+    convoyeur réassignés, recette bagages, notes) sont mis à jour à chaque ré-envoi, pas
+    seulement figés à la première synchronisation.
+    """
     from apps.voyages.models import Voyage
 
-    voyage, created = Voyage.objects.get_or_create(
-        public_id=data['public_id'],
-        defaults={
-            'numero_depart': data['numero_depart'],
-            'gare': gare,  # jamais celle du payload : la gare authentifiée fait foi
-            'ligne_id': data['ligne_id'],
-            'date_depart': data['date_depart'],
-            'heure_depart': data['heure_depart'],
-            'periode': data['periode'],
-            'vehicule_id': data.get('vehicule_id'),
-            'chauffeur_id': data.get('chauffeur_id'),
-            'convoyeur_id': data.get('convoyeur_id'),
-            'recette_bagages': data.get('recette_bagages') or 0,
-            'statut': data.get('statut', 'programme'),
-            'programme_id': data.get('programme_id'),
-            'cree_automatiquement': data.get('cree_automatiquement', False),
-            'notes': data.get('notes', ''),
-            'synced_at': timezone.now(),
-        }
-    )
-    if voyage.gare_id != gare.id:
-        # Un voyage avec ce public_id existe déjà mais appartient à une autre gare :
-        # signale une tentative d'usurpation ou une incohérence, on refuse.
-        raise IntegrityError(f"Le voyage {data['public_id']} appartient à une autre gare.")
+    voyage = Voyage.objects.filter(public_id=data['public_id']).first()
+
+    if voyage is None:
+        voyage = Voyage.objects.create(
+            public_id=data['public_id'],
+            numero_depart=data['numero_depart'],
+            gare=gare,  # jamais celle du payload : la gare authentifiée fait foi
+            ligne_id=data['ligne_id'],
+            date_depart=data['date_depart'],
+            heure_depart=data['heure_depart'],
+            periode=data['periode'],
+            vehicule_id=data.get('vehicule_id'),
+            chauffeur_id=data.get('chauffeur_id'),
+            convoyeur_id=data.get('convoyeur_id'),
+            recette_bagages=data.get('recette_bagages') or 0,
+            statut=data.get('statut', 'programme'),
+            programme_id=data.get('programme_id'),
+            cree_automatiquement=data.get('cree_automatiquement', False),
+            notes=data.get('notes', ''),
+            synced_at=timezone.now(),
+        )
+    else:
+        if voyage.gare_id != gare.id:
+            # Un voyage avec ce public_id existe déjà mais appartient à une autre gare :
+            # signale une tentative d'usurpation ou une incohérence, on refuse.
+            raise IntegrityError(f"Le voyage {data['public_id']} appartient à une autre gare.")
+
+        voyage.vehicule_id = data.get('vehicule_id')
+        voyage.chauffeur_id = data.get('chauffeur_id')
+        voyage.convoyeur_id = data.get('convoyeur_id')
+        voyage.recette_bagages = data.get('recette_bagages') or 0
+        voyage.statut = data.get('statut', voyage.statut)
+        voyage.notes = data.get('notes', voyage.notes)
+        voyage.save(update_fields=[
+            'vehicule', 'chauffeur', 'convoyeur', 'recette_bagages',
+            'statut', 'notes', 'date_modification',
+        ])
+
     return voyage
 
 
 def _upsert_billet(data, gare):
+    """
+    Upsert d'un billet par public_id. Comme pour le voyage, les champs qui évoluent après
+    la création (statut — ex: réservé -> payé —, moyen de paiement, date de paiement) sont
+    mis à jour à chaque ré-envoi, pas seulement figés à la première synchronisation.
+    Utilisé à la fois pour le push (gare -> central) et pour redescendre au poste gare les
+    billets vendus ailleurs sur ses propres voyages (pull), afin de réduire la fenêtre de
+    risque de survente entre deux synchronisations.
+    """
     from apps.voyages.models import Voyage
     from apps.clients.models import Client
     from apps.billets.models import Billet
@@ -142,26 +170,37 @@ def _upsert_billet(data, gare):
     if data.get('client_public_id'):
         client = Client.objects.filter(public_id=data['client_public_id']).first()
 
-    billet, created = Billet.objects.get_or_create(
-        public_id=data['public_id'],
-        defaults={
-            'numero': data['numero'],
-            'voyage': voyage,
-            'destination_id': data.get('destination_id'),
-            'client': client,
-            'client_nom': data['client_nom'],
-            'client_telephone': data['client_telephone'],
-            'numero_siege': data.get('numero_siege'),
-            'montant': data['montant'],
-            'statut': data.get('statut', 'reserve'),
-            'moyen_paiement': data.get('moyen_paiement', 'cash'),
-            'guichetier_id': data.get('guichetier_id'),
-            'date_paiement': data.get('date_paiement'),
-            'synced_at': timezone.now(),
-        }
-    )
-    if billet.voyage.gare_id != gare.id:
-        raise IntegrityError(f"Le billet {data['public_id']} appartient à une autre gare.")
+    billet = Billet.objects.filter(public_id=data['public_id']).first()
+
+    if billet is None:
+        billet = Billet.objects.create(
+            public_id=data['public_id'],
+            numero=data['numero'],
+            voyage=voyage,
+            destination_id=data.get('destination_id'),
+            client=client,
+            client_nom=data['client_nom'],
+            client_telephone=data['client_telephone'],
+            numero_siege=data.get('numero_siege'),
+            montant=data['montant'],
+            statut=data.get('statut', 'reserve'),
+            moyen_paiement=data.get('moyen_paiement', 'cash'),
+            guichetier_id=data.get('guichetier_id'),
+            date_paiement=data.get('date_paiement'),
+            synced_at=timezone.now(),
+        )
+    else:
+        if billet.voyage.gare_id != gare.id:
+            raise IntegrityError(f"Le billet {data['public_id']} appartient à une autre gare.")
+
+        billet.statut = data.get('statut', billet.statut)
+        billet.moyen_paiement = data.get('moyen_paiement', billet.moyen_paiement)
+        billet.date_paiement = data.get('date_paiement')
+        billet.client = client
+        billet.save(update_fields=[
+            'statut', 'moyen_paiement', 'date_paiement', 'client', 'date_modification',
+        ])
+
     return billet
 
 
@@ -239,17 +278,50 @@ def construire_pull(gare):
         # toutes les gares doivent voir la liste complète, pas seulement leurs propres
         # ventes. Réconciliés via _upsert_client (par public_id puis téléphone) plutôt
         # que mirorés par PK brute, car un client peut être créé indépendamment sur
-        # plusieurs gares avant leur première synchronisation.
+        # plusieurs gares antérieure à leur première synchronisation.
         'clients': _dump(Client.objects.all()),
+        # Billets déjà vendus sur les voyages de CETTE gare, y compris ceux vendus
+        # directement au central (ex: par un manager connecté) pendant que la gare est
+        # hors-ligne. Redescendus pour que l'occupation des sièges vue localement reste
+        # à jour et réduire la fenêtre de risque de survente entre deux synchronisations.
+        # Format dédié (public_id en clé étrangère, pas la PK brute) car Billet/Voyage se
+        # réconcilient par identité, pas par mirroring de PK — voir _upsert_billet.
+        'billets': _dump_billets_pour_gare(gare),
     }
+
+
+def _dump_billets_pour_gare(gare):
+    from apps.billets.models import Billet
+
+    billets = Billet.objects.filter(voyage__gare=gare).select_related('voyage', 'client')
+    return [
+        {
+            'public_id': str(b.public_id),
+            'numero': b.numero,
+            'voyage_public_id': str(b.voyage.public_id),
+            'destination_id': b.destination_id,
+            'client_public_id': str(b.client.public_id) if b.client_id else None,
+            'client_nom': b.client_nom,
+            'client_telephone': b.client_telephone,
+            'numero_siege': b.numero_siege,
+            'montant': str(b.montant),
+            'statut': b.statut,
+            'moyen_paiement': b.moyen_paiement,
+            'guichetier_id': b.guichetier_id,
+            'date_paiement': b.date_paiement.isoformat() if b.date_paiement else None,
+        }
+        for b in billets
+    ]
 
 
 def appliquer_pull(data):
     """
     Importe côté gare le dump produit par construire_pull. Idempotent (mirroir par PK
-    pour les modèles de PULL_ORDRE, réconciliation par identité pour les clients —
-    voir _upsert_client).
+    pour les modèles de PULL_ORDRE, réconciliation par identité pour les clients et les
+    billets — voir _upsert_client / _upsert_billet).
     """
+    from apps.gares.models import Gare
+
     total = 0
     with transaction.atomic():
         for item in data.get('clients', []):
@@ -261,4 +333,14 @@ def appliquer_pull(data):
             for obj in objets:
                 obj.save()
                 total += 1
+
+        billets = data.get('billets', [])
+        if billets:
+            gare_locale = Gare.objects.first()
+            for item in billets:
+                try:
+                    _upsert_billet(item, gare_locale)
+                    total += 1
+                except Exception:  # noqa: BLE001 — un billet invalide ne doit pas bloquer le reste du pull
+                    logger.warning("Sync pull — billet %s ignoré : échec de réconciliation", item.get('public_id'))
     return total
