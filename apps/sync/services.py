@@ -68,22 +68,35 @@ def appliquer_push(gare, payload):
 
 
 def _upsert_client(data):
+    """
+    Upsert d'un client par identité (public_id), puis par téléphone en secours —
+    un même client (même numéro, unique dans le modèle) peut être créé indépendamment
+    sur deux gares avant leur première synchronisation. Si le contact existe déjà,
+    son nom est mis à jour s'il diffère (une gare qui complète/corrige le nom d'un
+    client déjà connu ne doit jamais créer de doublon, et sa correction doit se
+    propager aux autres gares au prochain pull) — utilisé à la fois pour le push
+    (gare -> central) et le pull (central -> gare).
+    """
     from apps.clients.models import Client
 
-    try:
-        return Client.objects.get(public_id=data['public_id'])
-    except Client.DoesNotExist:
-        pass
-    # Un client peut déjà exister (créé par une autre gare) : le téléphone est unique.
-    existant = Client.objects.filter(telephone=data['telephone']).first()
-    if existant:
-        return existant
-    return Client.objects.create(
-        public_id=data['public_id'],
-        telephone=data['telephone'],
-        nom_complet=data['nom_complet'],
-        synced_at=timezone.now(),
-    )
+    client = Client.objects.filter(public_id=data['public_id']).first()
+    if client is None:
+        client = Client.objects.filter(telephone=data['telephone']).first()
+
+    if client is None:
+        return Client.objects.create(
+            public_id=data['public_id'],
+            telephone=data['telephone'],
+            nom_complet=data['nom_complet'],
+            synced_at=timezone.now(),
+        )
+
+    nouveau_nom = data.get('nom_complet')
+    if nouveau_nom and client.nom_complet != nouveau_nom:
+        client.nom_complet = nouveau_nom
+        client.save(update_fields=['nom_complet', 'date_modification'])
+
+    return client
 
 
 def _upsert_voyage(data, gare):
@@ -199,6 +212,7 @@ def construire_pull(gare):
     from apps.comptabilite.models import TypeDepense
     from apps.programmes.models import ProgrammeDepart
     from apps.gares.models import Gare
+    from apps.clients.models import Client
 
     compagnie = gare.compagnie
 
@@ -221,13 +235,27 @@ def construire_pull(gare):
         'chauffeurs': _dump(Chauffeur.objects.filter(compagnie=compagnie, actif=True)),
         'convoyeurs': _dump(Convoyeur.objects.filter(compagnie=compagnie, actif=True)),
         'programmes': _dump(ProgrammeDepart.objects.filter(gare=gare)),
+        # Les clients sont une ressource globale (pas de champ gare sur le modèle) :
+        # toutes les gares doivent voir la liste complète, pas seulement leurs propres
+        # ventes. Réconciliés via _upsert_client (par public_id puis téléphone) plutôt
+        # que mirorés par PK brute, car un client peut être créé indépendamment sur
+        # plusieurs gares avant leur première synchronisation.
+        'clients': _dump(Client.objects.all()),
     }
 
 
 def appliquer_pull(data):
-    """Importe côté gare le dump produit par construire_pull. Idempotent (mirroir par PK)."""
+    """
+    Importe côté gare le dump produit par construire_pull. Idempotent (mirroir par PK
+    pour les modèles de PULL_ORDRE, réconciliation par identité pour les clients —
+    voir _upsert_client).
+    """
     total = 0
     with transaction.atomic():
+        for item in data.get('clients', []):
+            _upsert_client(item['fields'])
+            total += 1
+
         for cle in PULL_ORDRE:
             objets = list(serializers.deserialize('json', json.dumps(data.get(cle, []))))
             for obj in objets:
