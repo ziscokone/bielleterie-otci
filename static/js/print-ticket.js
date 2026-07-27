@@ -1,24 +1,58 @@
 /**
- * Impression d'un ticket dans un iframe autonome, isole du reste de la page.
+ * Impression d'un ticket, en isolant son contenu du reste de la page.
  *
- * Objectif : window.print() sur la page complete oblige a masquer tout le
- * reste (tableaux, navbar, modales Bootstrap...) via CSS, ce qui peut faire
- * gonfler artificiellement le nombre de pages calcule par le navigateur et
- * dupliquer le ticket sur chaque page (notamment a cause des modales en
- * position:fixed). En imprimant depuis un iframe qui ne contient QUE le
- * ticket, ce risque disparait completement : il n'y a rien d'autre a cacher.
+ * Deux chemins possibles :
+ * - QZ Tray (si installe et lance sur le poste) : impression directe et
+ *   silencieuse sur l'imprimante par defaut Windows, sans boite de dialogue.
+ * - Sinon, repli sur l'impression navigateur classique (iframe + window.print()),
+ *   qui affiche la boite de dialogue d'impression standard.
+ *
+ * Le repli iframe reste necessaire pour les postes sans QZ Tray, et parce que
+ * window.print() sur la page complete oblige a masquer tout le reste (tableaux,
+ * navbar, modales Bootstrap...) via CSS, ce qui peut faire gonfler artificiellement
+ * le nombre de pages calcule par le navigateur et dupliquer le ticket sur chaque
+ * page (notamment a cause des modales en position:fixed). En imprimant depuis un
+ * iframe qui ne contient QUE le ticket, ce risque disparait completement.
  */
-function imprimerTicket(html, cssHref) {
-    // Chrome semble tronquer silencieusement le contenu au-dela d'une
-    // certaine hauteur quand @page utilise une hauteur "auto" (constate
-    // avec des lots de plusieurs tickets, coupes en plein milieu du 2e
-    // ticket peu importe le nombre demande). On calcule donc une hauteur
-    // de page FIXE et explicite, dimensionnee pour le nombre reel de
-    // tickets du lot, au lieu de laisser Chrome deviner avec "auto".
-    const nbTickets = (html.match(/class="ticket-preview/g) || []).length || 1;
-    const HAUTEUR_PAR_TICKET_MM = 160; // marge large : ticket + souche + message bas
-    const hauteurPageMm = nbTickets * HAUTEUR_PAR_TICKET_MM + 20;
 
+const QZ_PRINTER_STORAGE_KEY = 'qzPrinterName';
+
+async function connecterQZ() {
+    if (typeof qz === 'undefined') return false;
+    try {
+        if (!qz.websocket.isActive()) {
+            await qz.websocket.connect();
+        }
+        return true;
+    } catch (e) {
+        console.warn('QZ Tray indisponible, impression via le navigateur.', e);
+        return false;
+    }
+}
+
+async function imprimerViaQZ(html, cssHref, hauteurPageMm) {
+    // Imprimante ciblee : celle choisie manuellement via choisirImprimanteQZ(),
+    // sinon l'imprimante par defaut Windows (permet de changer de modele
+    // - Xprinter aujourd'hui, Epson demain - sans toucher au code).
+    const printer = localStorage.getItem(QZ_PRINTER_STORAGE_KEY) || await qz.printers.getDefault();
+
+    const config = qz.configs.create(printer, {
+        colorType: 'blackwhite',
+        units: 'mm',
+        size: { width: 80, height: hauteurPageMm },
+        margins: 0,
+    });
+
+    const fullHtml =
+        '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+        '<link rel="stylesheet" href="' + cssHref + '"></head>' +
+        '<body>' + html + '</body></html>';
+
+    const data = [{ type: 'pixel', format: 'html', flavor: 'plain', data: fullHtml }];
+    await qz.print(config, data);
+}
+
+function imprimerViaNavigateur(html, cssHref, hauteurPageMm) {
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
     iframe.style.left = '-9999px';
@@ -59,4 +93,27 @@ function imprimerTicket(html, cssHref) {
         '</head><body><div id="ticketsContainer">' + html + '</div></body></html>';
 
     document.body.appendChild(iframe);
+}
+
+async function imprimerTicket(html, cssHref) {
+    // Chrome semble tronquer silencieusement le contenu au-dela d'une
+    // certaine hauteur quand @page utilise une hauteur "auto" (constate
+    // avec des lots de plusieurs tickets, coupes en plein milieu du 2e
+    // ticket peu importe le nombre demande). On calcule donc une hauteur
+    // de page FIXE et explicite, dimensionnee pour le nombre reel de
+    // tickets du lot, au lieu de laisser Chrome deviner avec "auto".
+    const nbTickets = (html.match(/class="ticket-preview/g) || []).length || 1;
+    const HAUTEUR_PAR_TICKET_MM = 160; // marge large : ticket + souche + message bas
+    const hauteurPageMm = nbTickets * HAUTEUR_PAR_TICKET_MM + 20;
+
+    if (await connecterQZ()) {
+        try {
+            await imprimerViaQZ(html, cssHref, hauteurPageMm);
+            return;
+        } catch (e) {
+            console.warn('Echec impression QZ Tray, on bascule sur le navigateur.', e);
+        }
+    }
+
+    imprimerViaNavigateur(html, cssHref, hauteurPageMm);
 }

@@ -250,6 +250,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/vendor/qz-tray.js' %}"></script>
 <script src="{% static 'js/print-ticket.js' %}"></script>
 <script>
 const TICKET_CSS_HREF = "{% static 'css/custom.css' %}";
