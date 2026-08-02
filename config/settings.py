@@ -31,6 +31,16 @@ ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(',') if h.strip()]
 SYNC_CENTRAL_URL = os.environ.get('SYNC_CENTRAL_URL', '')
 SYNC_TOKEN = os.environ.get('SYNC_TOKEN', '')
 
+# ─── Impression thermique ESC/POS (poste guichet local) ──────────────────────
+# Le nom de l'imprimante et la largeur du ticket se configurent désormais
+# depuis l'application (menu utilisateur → "Configuration Imprimante Ticket",
+# champs sur apps.gares.models.Gare) — pas ici. IMPRIMANTE_BACKEND permet de
+# tester sans imprimante physique : 'dummy' (aucune sortie) ou 'file' (écrit
+# les octets ESC/POS bruts dans IMPRIMANTE_FICHIER_SORTIE pour inspection
+# manuelle) ; 'win32raw' (par défaut) est l'impression réelle sur le poste.
+IMPRIMANTE_BACKEND = os.environ.get('IMPRIMANTE_BACKEND', 'win32raw')
+IMPRIMANTE_FICHIER_SORTIE = os.environ.get('IMPRIMANTE_FICHIER_SORTIE', '')
+
 
 
 # Application definition

@@ -1,119 +1,74 @@
 /**
- * Impression d'un ticket, en isolant son contenu du reste de la page.
+ * Impression physique d'un ou plusieurs billets sur l'imprimante thermique
+ * ESC/POS du poste guichet (voir apps/guichet/impression.py côté serveur).
  *
- * Deux chemins possibles :
- * - QZ Tray (si installe et lance sur le poste) : impression directe et
- *   silencieuse sur l'imprimante par defaut Windows, sans boite de dialogue.
- * - Sinon, repli sur l'impression navigateur classique (iframe + window.print()),
- *   qui affiche la boite de dialogue d'impression standard.
+ * Le poste guichet fait tourner le navigateur ET le serveur Django sur la
+ * même machine, avec l'imprimante branchée en USB sur ce même poste : on
+ * imprime donc directement depuis Python (python-escpos, backend Win32Raw),
+ * sans passer par une boîte de dialogue navigateur. Il n'y a plus de repli
+ * navigateur en cas d'échec : l'utilisateur voit un message d'erreur avec un
+ * bouton "Réessayer l'impression".
  *
- * Le repli iframe reste necessaire pour les postes sans QZ Tray, et parce que
- * window.print() sur la page complete oblige a masquer tout le reste (tableaux,
- * navbar, modales Bootstrap...) via CSS, ce qui peut faire gonfler artificiellement
- * le nombre de pages calcule par le navigateur et dupliquer le ticket sur chaque
- * page (notamment a cause des modales en position:fixed). En imprimant depuis un
- * iframe qui ne contient QUE le ticket, ce risque disparait completement.
+ * L'aperçu HTML à l'écran (.ticket-preview, displayTickets/displayDuplicata
+ * dans les templates) reste inchangé : seul le mécanisme d'impression
+ * physique est remplacé ici.
  */
 
-const QZ_PRINTER_STORAGE_KEY = 'qzPrinterName';
+async function imprimerBillets(publicIds, csrfToken, { duplicata = false } = {}) {
+    const formData = new FormData();
+    publicIds.forEach((id) => formData.append('public_id', id));
+    formData.append('duplicata', duplicata ? 'true' : 'false');
 
-async function connecterQZ() {
-    if (typeof qz === 'undefined') return false;
+    let data;
     try {
-        if (!qz.websocket.isActive()) {
-            await qz.websocket.connect();
-        }
-        return true;
+        const reponse = await fetch('/api/imprimer-billets/', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': csrfToken },
+        });
+        data = await reponse.json();
     } catch (e) {
-        console.warn('QZ Tray indisponible, impression via le navigateur.', e);
-        return false;
+        afficherErreurImpression('Erreur de connexion au serveur.', () =>
+            imprimerBillets(publicIds, csrfToken, { duplicata })
+        );
+        return;
+    }
+
+    if (!data.success) {
+        afficherErreurImpression(data.error || 'Erreur lors de l\'impression.', () =>
+            imprimerBillets(publicIds, csrfToken, { duplicata })
+        );
     }
 }
 
-async function imprimerViaQZ(html, cssHref, hauteurPageMm) {
-    // Imprimante ciblee : celle choisie manuellement via choisirImprimanteQZ(),
-    // sinon l'imprimante par defaut Windows (permet de changer de modele
-    // - Xprinter aujourd'hui, Epson demain - sans toucher au code).
-    const printer = localStorage.getItem(QZ_PRINTER_STORAGE_KEY) || await qz.printers.getDefault();
+function afficherErreurImpression(message, reessayer) {
+    const bandeau = document.createElement('div');
+    bandeau.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    bandeau.style.top = '1rem';
+    bandeau.style.right = '1rem';
+    bandeau.style.zIndex = '2000';
+    bandeau.style.maxWidth = '400px';
 
-    const config = qz.configs.create(printer, {
-        colorType: 'blackwhite',
-        units: 'mm',
-        size: { width: 80, height: hauteurPageMm },
-        margins: 0,
-    });
+    const texte = document.createElement('span');
+    texte.textContent = message;
+    bandeau.appendChild(texte);
 
-    const fullHtml =
-        '<!DOCTYPE html><html><head><meta charset="utf-8">' +
-        '<link rel="stylesheet" href="' + cssHref + '"></head>' +
-        '<body>' + html + '</body></html>';
-
-    const data = [{ type: 'pixel', format: 'html', flavor: 'plain', data: fullHtml }];
-    await qz.print(config, data);
-}
-
-function imprimerViaNavigateur(html, cssHref, hauteurPageMm) {
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.left = '-9999px';
-    iframe.style.top = '0';
-    iframe.style.width = '1px';
-    iframe.style.height = '1px';
-    iframe.style.border = '0';
-
-    // srcdoc declenche un seul evenement load fiable, une fois le HTML et sa
-    // feuille de style charges. document.write() sur un iframe fraichement
-    // attache peut declencher onload deux fois (document vide initial, puis
-    // contenu ecrit), et provoquer une impression prematuree/vide.
-    iframe.onload = function () {
-        let retire = false;
-        const retirerIframe = function () {
-            if (retire) return;
-            retire = true;
-            iframe.remove();
-        };
-
-        // afterprint se declenche une fois la boite de dialogue fermee par
-        // l'utilisateur : c'est le signal fiable pour nettoyer, quelle que
-        // soit la taille du lot (window.print() n'est pas garanti bloquant
-        // sur tous les navigateurs, surtout pour un gros lot de billets qui
-        // met plus de temps a etre mis en page). Le setTimeout n'est qu'un
-        // filet de securite si l'evenement ne se declenche pas.
-        iframe.contentWindow.onafterprint = retirerIframe;
-        setTimeout(retirerIframe, 60000);
-
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
+    const btnReessayer = document.createElement('button');
+    btnReessayer.type = 'button';
+    btnReessayer.className = 'btn btn-sm btn-outline-light ms-3';
+    btnReessayer.textContent = 'Réessayer l\'impression';
+    btnReessayer.onclick = () => {
+        bandeau.remove();
+        reessayer();
     };
+    bandeau.appendChild(btnReessayer);
 
-    iframe.srcdoc =
-        '<!DOCTYPE html><html><head><meta charset="utf-8">' +
-        '<link rel="stylesheet" href="' + cssHref + '">' +
-        '<style>@page { size: 80mm ' + hauteurPageMm + 'mm; margin: 0; }</style>' +
-        '</head><body><div id="ticketsContainer">' + html + '</div></body></html>';
+    const btnFermer = document.createElement('button');
+    btnFermer.type = 'button';
+    btnFermer.className = 'btn-close';
+    btnFermer.setAttribute('data-bs-dismiss', 'alert');
+    btnFermer.onclick = () => bandeau.remove();
+    bandeau.appendChild(btnFermer);
 
-    document.body.appendChild(iframe);
-}
-
-async function imprimerTicket(html, cssHref) {
-    // Chrome semble tronquer silencieusement le contenu au-dela d'une
-    // certaine hauteur quand @page utilise une hauteur "auto" (constate
-    // avec des lots de plusieurs tickets, coupes en plein milieu du 2e
-    // ticket peu importe le nombre demande). On calcule donc une hauteur
-    // de page FIXE et explicite, dimensionnee pour le nombre reel de
-    // tickets du lot, au lieu de laisser Chrome deviner avec "auto".
-    const nbTickets = (html.match(/class="ticket-preview/g) || []).length || 1;
-    const HAUTEUR_PAR_TICKET_MM = 160; // marge large : ticket + souche + message bas
-    const hauteurPageMm = nbTickets * HAUTEUR_PAR_TICKET_MM + 20;
-
-    if (await connecterQZ()) {
-        try {
-            await imprimerViaQZ(html, cssHref, hauteurPageMm);
-            return;
-        } catch (e) {
-            console.warn('Echec impression QZ Tray, on bascule sur le navigateur.', e);
-        }
-    }
-
-    imprimerViaNavigateur(html, cssHref, hauteurPageMm);
+    document.body.appendChild(bandeau);
 }

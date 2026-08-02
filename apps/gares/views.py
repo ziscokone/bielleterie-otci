@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect
 
 from core.mixins import SuperAdminRequiredMixin
 from .models import Gare
-from .forms import GareForm
+from .forms import GareForm, ImprimanteForm
 
 
 class GestionRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -81,3 +81,42 @@ class GareDeleteView(SuperAdminRequiredMixin, DeleteView):
         self.object.save(update_fields=['active'])
         messages.success(self.request, 'Gare désactivée avec succès.')
         return HttpResponseRedirect(success_url)
+
+
+class ImprimanteConfigView(GestionRequiredMixin, UpdateView):
+    """
+    Configuration de l'imprimante thermique ESC/POS de ce poste (nom Windows,
+    largeur du ticket) — voir apps/guichet/impression.py. Chaque poste
+    hors-ligne n'a qu'une seule gare locale (Gare.objects.first()), jamais
+    recréée ici : elle doit venir de la synchronisation avec le central.
+    """
+    model = Gare
+    form_class = ImprimanteForm
+    template_name = 'gares/imprimante_config.html'
+    success_url = reverse_lazy('gares:imprimante_config')
+
+    def get_object(self, queryset=None):
+        return Gare.objects.first()
+
+    def _verifier_gare_existe(self, request):
+        """None si une gare existe, sinon une redirection vers le statut de
+        synchronisation. Appelé depuis get()/post() (pas dispatch()) pour que
+        la vérification d'accès (GestionRequiredMixin) passe d'abord."""
+        if self.get_object() is None:
+            messages.error(
+                request,
+                "Aucune gare trouvée sur ce poste. Effectuez d'abord une "
+                "synchronisation (sync_pull) avant de configurer l'imprimante."
+            )
+            return redirect('sync:statut')
+        return None
+
+    def get(self, request, *args, **kwargs):
+        return self._verifier_gare_existe(request) or super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self._verifier_gare_existe(request) or super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        messages.success(self.request, "Configuration de l'imprimante enregistrée avec succès.")
+        return super().form_valid(form)

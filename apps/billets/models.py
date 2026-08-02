@@ -200,6 +200,7 @@ class Billet(models.Model):
         }
 
         return {
+            'public_id': str(self.public_id),
             'numero': self.numero,
             'numero_depart': self.voyage.numero_depart if hasattr(self.voyage, 'numero_depart') else 'N/A',
             'client_nom': self.client_nom,

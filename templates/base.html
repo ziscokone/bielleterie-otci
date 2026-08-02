@@ -255,6 +255,13 @@
                                 <i class="bi bi-arrow-repeat me-2"></i> Synchronisation
                             </a>
                         </li>
+                        {% if user.has_global_access or user.is_chef_gare %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gares:imprimante_config' %}">
+                                <i class="bi bi-printer me-2"></i> Configuration Imprimante Ticket
+                            </a>
+                        </li>
+                        {% endif %}
                         {% if user.role == 'super_admin' %}
                         <li>
                             <a class="dropdown-item" href="{% url 'compagnie:parametres' %}">

@@ -250,11 +250,8 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/vendor/qz-tray.js' %}"></script>
 <script src="{% static 'js/print-ticket.js' %}"></script>
 <script>
-const TICKET_CSS_HREF = "{% static 'css/custom.css' %}";
-
 document.addEventListener('DOMContentLoaded', function() {
 
     // --- Fonctions ticket (impression) ---
@@ -454,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 vendreAutreModal.hide();
                 displayTicket(data.billet);
-                setTimeout(() => imprimerTicket(document.getElementById('ticketContainer').innerHTML, TICKET_CSS_HREF), 150);
+                imprimerBillets([data.billet.public_id], '{{ csrf_token }}');
                 const row = document.querySelector(`button.btn-vendre-autre[data-id="${billetId}"]`);
                 if (row) row.closest('tr').remove();
             } else {
@@ -489,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     displayTicket(data.billet);
-                    setTimeout(() => imprimerTicket(document.getElementById('ticketContainer').innerHTML, TICKET_CSS_HREF), 100);
+                    imprimerBillets([data.billet.public_id], '{{ csrf_token }}');
                     row.remove();
                 } else {
                     alert(data.error);

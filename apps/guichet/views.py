@@ -12,6 +12,7 @@ from apps.billets.models import Billet
 from apps.clients.models import Client
 from apps.destinations.models import Destination
 from apps.voyages.models import Voyage
+from apps.guichet import impression
 
 
 class DashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
@@ -490,6 +491,53 @@ def get_billet_info(request, billet_id):
         'success': True,
         'billet': billet.get_info_impression()
     })
+
+
+@ratelimit(key='user', rate='60/m', method='POST', block=True)
+@login_required
+def imprimer_billets(request):
+    """
+    Imprime physiquement un ou plusieurs billets sur l'imprimante thermique
+    du poste, à partir de leurs public_id. Les données d'impression sont
+    re-dérivées côté serveur (jamais confiance dans un JSON envoyé par le
+    client pour un document financier).
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
+
+    public_ids = request.POST.getlist('public_id')
+    duplicata = request.POST.get('duplicata') == 'true'
+    user = request.user
+
+    if not public_ids:
+        return JsonResponse({'success': False, 'error': 'Aucun billet à imprimer'})
+
+    billets_par_id = {
+        str(billet.public_id): billet
+        for billet in Billet.objects.filter(public_id__in=public_ids)
+    }
+
+    billets = []
+    for public_id in public_ids:
+        billet = billets_par_id.get(public_id)
+        if billet is None:
+            return JsonResponse({'success': False, 'error': 'Billet introuvable'})
+        if not user.has_global_access and billet.voyage.gare != user.gare:
+            return JsonResponse({'success': False, 'error': 'Accès non autorisé'})
+        billets.append(billet)
+
+    try:
+        billets_info = [billet.get_info_impression() for billet in billets]
+        impression.imprimer_billets(billets_info, duplicata=duplicata)
+    except impression.ErreurImpression as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception:
+        return JsonResponse({
+            'success': False,
+            'error': 'Une erreur est survenue. Veuillez réessayer.'
+        }, status=500)
+
+    return JsonResponse({'success': True})
 
 
 @login_required

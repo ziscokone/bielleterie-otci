@@ -513,11 +513,8 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/vendor/qz-tray.js' %}"></script>
 <script src="{% static 'js/print-ticket.js' %}"></script>
 <script>
-const TICKET_CSS_HREF = "{% static 'css/custom.css' %}";
-
 document.addEventListener('DOMContentLoaded', function() {
     const voyageId = "{{ voyage.public_id }}";
     const form = document.getElementById('venteForm');
@@ -730,13 +727,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 // Si c'est une vente (paiement), afficher dans le container caché et imprimer
                 if (submitBtn.value === 'true') {
-                    // Afficher les tickets dans le container caché
+                    // Afficher les tickets dans le container caché (aperçu écran)
                     displayTickets(data.billets);
 
-                    // Petit délai pour que le DOM se mette à jour
-                    setTimeout(() => {
-                        imprimerTicket(document.getElementById('ticketsContainer').innerHTML, TICKET_CSS_HREF);
-                    }, 150);
+                    // Impression physique ESC/POS (indépendante de l'aperçu DOM)
+                    imprimerBillets(data.billets.map(b => b.public_id), '{{ csrf_token }}');
                 } else {
                     // Si c'est une réservation, afficher dans le modal
                     displayTicketsInModal(data.billets);
@@ -1116,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 vendreAutreModal.hide();
                 displayTickets([data.billet]);
-                setTimeout(() => imprimerTicket(document.getElementById('ticketsContainer').innerHTML, TICKET_CSS_HREF), 150);
+                imprimerBillets([data.billet.public_id], '{{ csrf_token }}');
                 refreshSeats();
                 // Supprimer la ligne de réservation du tableau
                 const row = document.querySelector(`button.btn-vendre-autre[data-id="${billetId}"]`);
@@ -1149,10 +1144,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     displayTickets([data.billet]);
-                    // Lancer l'impression automatique pour paiement de réservation
-                    setTimeout(() => {
-                        imprimerTicket(document.getElementById('ticketsContainer').innerHTML, TICKET_CSS_HREF);
-                    }, 100);
+                    // Impression physique ESC/POS du paiement de réservation
+                    imprimerBillets([data.billet.public_id], '{{ csrf_token }}');
                     refreshSeats();
                     // Supprimer la ligne de réservation
                     this.closest('tr').remove();

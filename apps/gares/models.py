@@ -39,6 +39,20 @@ class Gare(models.Model):
         help_text="Format YYYYMM pour la réinitialisation mensuelle"
     )
 
+    # Configuration de l'impression thermique ESC/POS du poste (voir apps.guichet.impression)
+    imprimante_nom = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        verbose_name="Nom de l'imprimante (Windows)",
+        help_text="Nom exact tel qu'affiché dans \"Périphériques et imprimantes\" sur ce poste."
+    )
+    imprimante_largeur_caracteres = models.PositiveIntegerField(
+        default=42,
+        verbose_name="Largeur du ticket (caractères)",
+        help_text="42 convient à la plupart des imprimantes thermiques 80mm."
+    )
+
     class Meta:
         verbose_name = "Gare"
         verbose_name_plural = "Gares"

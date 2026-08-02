@@ -23,3 +23,28 @@ class GareForm(forms.ModelForm):
         if code:
             code = code.upper()
         return code
+
+
+class ImprimanteForm(forms.ModelForm):
+    """Configuration de l'imprimante thermique ESC/POS de ce poste."""
+
+    class Meta:
+        model = Gare
+        fields = ['imprimante_nom', 'imprimante_largeur_caracteres']
+        widgets = {
+            'imprimante_nom': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: XP-80C, EPSON TM-T20II',
+            }),
+            'imprimante_largeur_caracteres': forms.NumberInput(attrs={
+                'class': 'form-control', 'min': '20', 'max': '64',
+            }),
+        }
+        labels = {
+            'imprimante_nom': "Nom de l'imprimante (tel qu'affiché dans Windows)",
+            'imprimante_largeur_caracteres': 'Largeur du ticket (caractères)',
+        }
+        help_texts = {
+            'imprimante_nom': "Ouvrir \"Périphériques et imprimantes\" dans Windows et copier le nom exact affiché.",
+            'imprimante_largeur_caracteres': "42 convient à la plupart des imprimantes thermiques 80mm. À ajuster si le texte déborde ou semble trop étroit.",
+        }

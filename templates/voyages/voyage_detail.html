@@ -613,7 +613,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                <button type="button" class="btn btn-primary" onclick="imprimerTicket(document.getElementById('duplicataContainer').innerHTML, TICKET_CSS_HREF)">
+                <button type="button" class="btn btn-primary" onclick="imprimerDuplicata()">
                     <i class="bi bi-printer me-2"></i>Imprimer
                 </button>
             </div>
@@ -1172,10 +1172,14 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/vendor/qz-tray.js' %}"></script>
 <script src="{% static 'js/print-ticket.js' %}"></script>
 <script>
-const TICKET_CSS_HREF = "{% static 'css/custom.css' %}";
+let dernierDuplicataPublicId = null;
+
+function imprimerDuplicata() {
+    if (!dernierDuplicataPublicId) return;
+    imprimerBillets([dernierDuplicataPublicId], '{{ csrf_token }}', { duplicata: true });
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     const duplicataModal = new bootstrap.Modal(document.getElementById('duplicataModal'));
@@ -1185,6 +1189,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Fonction pour afficher le ticket duplicata
     function displayDuplicata(billet) {
+        dernierDuplicataPublicId = billet.public_id;
         let html = `
             <div class="ticket-preview ticket-duplicata mb-3">
                 <div class="duplicata-watermark">DUPLICATA</div>

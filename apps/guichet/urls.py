@@ -16,4 +16,5 @@ urlpatterns = [
     path('api/sieges/<uuid:voyage_id>/', views.get_sieges_status, name='sieges_status'),
     path('api/billet/<uuid:billet_id>/', views.get_billet_info, name='billet_info'),
     path('api/destinations-billet/<uuid:billet_id>/', views.get_destinations_voyage, name='destinations_billet'),
+    path('api/imprimer-billets/', views.imprimer_billets, name='imprimer_billets'),
 ]
