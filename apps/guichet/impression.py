@@ -124,9 +124,25 @@ def imprimer_billets(billets_info, duplicata=False, imprimante=None, largeur=Non
         imprimante.close()
 
 
+# Caractères typographiques usuels absents du codepage CP858 (voir imprimer_billets) :
+# sans ce nettoyage ils ressortent en "?" sur le ticket (ex: la flèche de Ligne.__str__
+# donnant "DANANE ? ABIDJAN" au lieu de "DANANE → ABIDJAN").
+_TRANSLITTERATIONS = str.maketrans({
+    '→': '-', '←': '-', '–': '-', '—': '-',
+    '’': "'", '‘': "'", '“': '"', '”': '"', '…': '...',
+})
+
+
+def _texte_imprimable(valeur):
+    """Rend une chaîne sûre pour l'impression en CP858 (voir _TRANSLITTERATIONS ;
+    tout caractère restant non représentable dans ce jeu est remplacé par '?')."""
+    valeur = str(valeur).translate(_TRANSLITTERATIONS)
+    return valeur.encode('cp858', errors='replace').decode('cp858')
+
+
 def _ligne(etiquette, valeur, largeur):
     """Une ligne étiquette/valeur : étiquette à gauche, valeur à droite, largeur fixe."""
-    valeur = str(valeur)
+    valeur = _texte_imprimable(valeur)
     espace = largeur - len(etiquette) - len(valeur)
     if espace < 1:
         return f"{etiquette}: {valeur}\n"
@@ -140,13 +156,13 @@ def _montant_affiche(montant):
 
 def _imprimer_un_billet(p, info, duplicata, largeur):
     p.set(align='center', bold=True, width=2, height=2)
-    p.textln(info['compagnie_nom'] or '')
+    p.textln(_texte_imprimable(info['compagnie_nom'] or ''))
 
     p.set(align='center', bold=False, width=1, height=1)
     if info['gare_adresse']:
-        p.textln(info['gare_adresse'])
+        p.textln(_texte_imprimable(info['gare_adresse']))
     if info['gare_telephone']:
-        p.textln(info['gare_telephone'])
+        p.textln(_texte_imprimable(info['gare_telephone']))
     p.textln('-' * largeur)
 
     if duplicata:
@@ -182,12 +198,12 @@ def _imprimer_un_billet(p, info, duplicata, largeur):
 
     if not souche and info['message_bas_ticket']:
         p.set(align='left', bold=False)
-        p.textln(info['message_bas_ticket'])
+        p.textln(_texte_imprimable(info['message_bas_ticket']))
 
     if souche:
         if info['message_bas_ticket']:
             p.set(align='left', bold=False)
-            p.textln(info['message_bas_ticket'])
+            p.textln(_texte_imprimable(info['message_bas_ticket']))
 
         p.textln('-' * largeur)
         p.set(align='center', bold=True)

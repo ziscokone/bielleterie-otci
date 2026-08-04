@@ -319,28 +319,47 @@ def appliquer_pull(data):
     Importe côté gare le dump produit par construire_pull. Idempotent (mirroir par PK
     pour les modèles de PULL_ORDRE, réconciliation par identité pour les clients et les
     billets — voir _upsert_client / _upsert_billet).
+
+    Chaque enregistrement est appliqué dans SA PROPRE transaction (comme dans
+    appliquer_push), et non dans une transaction globale : sur SQLite, les clés
+    étrangères sont DEFERRABLE INITIALLY DEFERRED (vérifiées au COMMIT, pas à
+    l'écriture). Un `try/except` par enregistrement à l'intérieur d'une transaction
+    unique ne protège donc de rien — l'erreur ne remonte qu'au COMMIT final et fait
+    alors échouer tout le pull, y compris les enregistrements valides déjà traités.
+    Isoler chaque enregistrement dans son propre COMMIT est indispensable pour qu'un
+    enregistrement invalide (ex: billet vendu par un compte à accès global, jamais
+    synchronisé côté gare — voir construire_pull) ne bloque pas les autres.
     """
     from apps.gares.models import Gare
 
     total = 0
-    with transaction.atomic():
-        for item in data.get('clients', []):
-            _upsert_client(item['fields'])
+
+    for item in data.get('clients', []):
+        try:
+            with transaction.atomic():
+                _upsert_client(item['fields'])
             total += 1
+        except Exception:  # noqa: BLE001 — un client invalide ne doit pas bloquer le reste du pull
+            logger.warning("Sync pull — client %s ignoré : échec de réconciliation", item.get('pk'))
 
-        for cle in PULL_ORDRE:
-            objets = list(serializers.deserialize('json', json.dumps(data.get(cle, []))))
-            for obj in objets:
-                obj.save()
+    for cle in PULL_ORDRE:
+        objets = list(serializers.deserialize('json', json.dumps(data.get(cle, []))))
+        for obj in objets:
+            try:
+                with transaction.atomic():
+                    obj.save()
                 total += 1
+            except Exception:  # noqa: BLE001 — un enregistrement invalide ne doit pas bloquer le reste du pull
+                logger.warning("Sync pull — %s %s ignoré : échec d'application", cle, obj.object.pk)
 
-        billets = data.get('billets', [])
-        if billets:
-            gare_locale = Gare.objects.first()
-            for item in billets:
-                try:
+    billets = data.get('billets', [])
+    if billets:
+        gare_locale = Gare.objects.first()
+        for item in billets:
+            try:
+                with transaction.atomic():
                     _upsert_billet(item, gare_locale)
-                    total += 1
-                except Exception:  # noqa: BLE001 — un billet invalide ne doit pas bloquer le reste du pull
-                    logger.warning("Sync pull — billet %s ignoré : échec de réconciliation", item.get('public_id'))
+                total += 1
+            except Exception:  # noqa: BLE001 — un billet invalide ne doit pas bloquer le reste du pull
+                logger.warning("Sync pull — billet %s ignoré : échec de réconciliation", item.get('public_id'))
     return total
